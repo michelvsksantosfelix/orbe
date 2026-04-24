@@ -24,12 +24,13 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   const [docType, setDocType] = useState('Contrato Assinado');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlsRef = useRef<string[]>([]);
 
   useEffect(() => {
     return () => {
-      capturedPages.forEach(p => URL.revokeObjectURL(p.previewUrl));
+      objectUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [capturedPages]);
+  }, []);
 
   const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -51,9 +52,11 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           };
           fileToProcess = await imageCompression(file, options);
           
+          const previewUrl = URL.createObjectURL(fileToProcess);
+          objectUrlsRef.current.push(previewUrl);
           newPages.push({
             id: Math.random().toString(36).substr(2, 9),
-            previewUrl: URL.createObjectURL(fileToProcess),
+            previewUrl: previewUrl,
             file: fileToProcess
           });
         } else if (file.type === 'application/pdf') {

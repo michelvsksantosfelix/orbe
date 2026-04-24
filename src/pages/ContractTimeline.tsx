@@ -132,7 +132,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h3>
                   <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-2xl">{step.description || "Esta etapa foi finalizada com sucesso e validada pela equipe técnica."}</p>
                   
-                  {(step.documentos && step.documentos.length > 0) ? (
+                  {(Array.isArray(step.documentos) && step.documentos.length > 0) ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                       {step.documentos.map((docUrl: string, idx: number) => (
                         <div key={idx} className="bg-gray-50 p-4 rounded-[20px] inline-flex flex-col gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100 w-full">
@@ -218,7 +218,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                         Recebemos seus documentos. Nossa equipe de engenharia está validando os dados para liberar a próxima fase do cronograma.
                       </p>
                       
-                      {(step.documentos && step.documentos.length > 0) ? (
+                      {(Array.isArray(step.documentos) && step.documentos.length > 0) ? (
                         <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {step.documentos.map((docUrl: string, idx: number) => (
                             <a key={idx} href={docUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm text-blue-600 font-bold hover:bg-blue-50 transition-all">

@@ -15,9 +15,10 @@ import CollabDashboard from './pages/CollabDashboard';
 import ContractTimeline from './pages/ContractTimeline';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError() {
@@ -44,7 +45,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
       );
     }
 
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
