@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, X } from 'lucide-react';
-import { db, storage } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import imageCompression from 'browser-image-compression';
 
@@ -93,10 +93,26 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       const uploadPromises = capturedPages.map(async (item, index) => {
         const extension = item.file.type === 'application/pdf' ? 'pdf' : 'jpg';
         const storagePath = `contracts/${contractId}/steps/${stepId}/${Date.now()}_page_${index + 1}.${extension}`;
-        const storageRef = ref(storage, storagePath);
         
-        const snapshot = await uploadBytes(storageRef, item.file);
-        return getDownloadURL(snapshot.ref);
+        // Ensure you have a 'documents' bucket created in your Supabase project and it is set to "Public"
+        const bucketName = import.meta.env.SUPABASE_STORAGE_BUCKET || import.meta.env.VITE_SUPABASE_STORAGE_BUCKET || 'documents';
+        
+        const { data, error } = await supabase.storage
+          .from(bucketName)
+          .upload(storagePath, item.file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) {
+          throw error;
+        }
+
+        const { data: publicURLData } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(storagePath);
+          
+        return publicURLData.publicUrl;
       });
 
       const downloadURLs = await Promise.all(uploadPromises);
@@ -137,13 +153,11 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 glass-card rounded-[2rem] border border-white/20 shadow-2xl relative">
-      {loading && (
-        <div className="absolute inset-0 z-[100] bg-white/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in duration-300">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-          <p className="font-bold text-blue-900 animate-pulse">Enviando Arquivos...</p>
-        </div>
-      )}
+    <div className="flex flex-col gap-6 p-6 glass-card rounded-[2rem] border border-white/20 shadow-2xl relative overflow-hidden">
+      <div className={`absolute inset-0 z-[100] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center transition-all duration-300 ${loading ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+        <p className="font-bold text-blue-900 animate-pulse">Enviando Arquivos...</p>
+      </div>
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <FileText className="text-blue-600" size={24} />
