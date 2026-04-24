@@ -41,39 +41,55 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen bg-transparent font-sans">
-      <nav className="glass-panel mx-4 mt-6 rounded-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <span className="text-xl font-bold text-blue-600">Orbe</span>
-              <span className="ml-2 font-medium text-gray-800">| Meu Resumo</span>
+      <nav className="glass-panel mx-4 mt-6 rounded-[32px] shadow-sm border border-white/50 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex justify-between h-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-200">O</div>
+              <span className="text-xl font-black text-gray-900 tracking-tighter">MEU RESUMO</span>
             </div>
             <div className="flex items-center">
-              <button onClick={handleLogout} className="text-gray-500 hover:text-gray-800 flex items-center gap-1 text-sm font-medium">
-                <LogOut size={16} /> Sair
+              <button onClick={handleLogout} className="bg-white/40 hover:bg-white text-gray-700 px-5 py-2.5 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all">
+                <LogOut size={14} /> Sair
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
         
         {contracts.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center gap-2 mb-6">
-              <LayoutDashboard className="text-blue-600" />
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Meus Contratos em Andamento</h2>
+          <section className="mb-20">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                <LayoutDashboard size={24} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tighter leading-tight">Projetos em Execução</h2>
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.15em]">Siga cada passo da sua instalação</p>
+              </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {contracts.map(contract => (
-                <div key={contract.id} className="glass-card p-6 rounded-3xl hover:shadow-lg transition-shadow">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{contract.productName}</h3>
-                  <p className="text-sm text-gray-500 mb-6">Iniciado em {new Date(contract.createdAt).toLocaleDateString()}</p>
+                <div key={contract.id} className="group glass-card p-0 rounded-[40px] overflow-hidden flex flex-col hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 hover:-translate-y-2 border-none">
+                  <div className="p-10 pb-8 flex-1">
+                     <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-emerald-100">
+                       Ativo
+                     </span>
+                     <h3 className="text-2xl font-black text-gray-900 mb-2 leading-tight uppercase tracking-tight group-hover:text-blue-600 transition-colors">{contract.productName}</h3>
+                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-8">Código: #{contract.id.slice(0, 8)}</p>
+                  </div>
                   
-                  <button onClick={() => navigate(`/contract/${contract.id}`)} className="w-full py-3 glass-panel text-blue-700 font-semibold rounded-xl hover:bg-white/50 transition-colors">
-                    Acompanhar Status
-                  </button>
+                  <div className="p-2 pt-0">
+                    <button 
+                      onClick={() => navigate(`/contract/${contract.id}`)} 
+                      className="w-full py-5 bg-gray-900 text-white font-black uppercase tracking-[0.2em] text-[10px] rounded-[32px] hover:bg-blue-600 transition-all shadow-xl shadow-gray-200"
+                    >
+                      Painel de Acompanhamento
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -81,23 +97,29 @@ export default function ClientDashboard() {
         )}
 
         <section>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="text-blue-600" />
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Catálogo Orbe</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 shadow-sm border border-gray-100">
+                <ShoppingBag size={24} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tighter leading-tight">Catálogo Orbe</h2>
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.15em]">Explore soluções inteligentes</p>
+              </div>
             </div>
-            <button className="flex items-center justify-center gap-2 text-sm font-semibold glass-card text-blue-700 px-4 py-2.5 rounded-xl hover:bg-white/50 transition-colors w-full sm:w-auto min-h-[44px]">
-              <MessageCircle size={16} /> Falar com Vendedor
+            <button className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] bg-white hover:bg-blue-600 hover:text-white text-gray-900 px-8 py-4 rounded-[24px] transition-all border border-gray-100 shadow-xl shadow-gray-100 w-full sm:w-auto">
+              <MessageCircle size={18} /> Falar com Vendas
             </button>
           </div>
           
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {products.map(product => (
               <ProductCard key={product.id} product={product} onSelect={() => setSelectedProduct(product)} />
             ))}
             {products.length === 0 && (
-              <div className="col-span-full text-center py-12 text-gray-500">
-                Catálogo sendo atualizado. Entre em contato com vendas para orçamentos.
+              <div className="col-span-full text-center py-24 glass-card rounded-[40px] border-dashed border-2 border-white/50 bg-white/10">
+                <ShoppingBag size={48} className="mx-auto text-gray-300 mb-6 opacity-20" />
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Catálogo em fase de sincronização</p>
               </div>
             )}
           </div>

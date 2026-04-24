@@ -51,56 +51,46 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-transparent min-h-screen max-w-7xl mx-auto">
-      <header className="mb-6 md:mb-10 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Gestão de Obras e Instalações</h1>
-          <p className="text-sm md:text-base text-gray-500 mt-1">Visão global dos contratos Orbe.</p>
+    <div className="p-4 md:p-8 bg-transparent min-h-screen max-w-7xl mx-auto font-sans">
+      <header className="mb-8 md:mb-16 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div className="relative group">
+          <div className="absolute -left-4 top-0 w-1 h-full bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter leading-none mb-3">Orbe Gestão</h1>
+          <p className="text-sm md:text-lg font-medium text-gray-500 max-w-md leading-relaxed">Infraestrutura inteligente para controle total de obras e instalações premium.</p>
         </div>
-        <button onClick={handleLogout} className="text-gray-500 hover:text-gray-900 flex items-center gap-2 font-medium self-end sm:self-auto -mt-10 sm:mt-0">
-          <LogOut size={20} /> Sair
+        <button onClick={handleLogout} className="bg-white/40 hover:bg-white text-gray-700 px-6 py-3 rounded-2xl flex items-center gap-2 font-bold text-sm transition-all border border-white/60 shadow-sm hover:shadow-md backdrop-blur-md self-end sm:self-auto uppercase tracking-widest">
+          <LogOut size={16} /> Sair
         </button>
       </header>
 
-      <div className="flex overflow-x-auto pb-2 mb-6 md:mb-8 gap-2 md:gap-4 hide-scrollbar snap-x">
-        <button 
-          onClick={() => setActiveTab('contracts')}
-          className={`shrink-0 snap-start px-4 md:px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${activeTab === 'contracts' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-600 hover:bg-white/50'}`}
-        >
-          <LayoutList size={18} /> Contratos Ativos
-        </button>
-        <button 
-          onClick={() => setActiveTab('crm')}
-          className={`shrink-0 snap-start px-4 md:px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${activeTab === 'crm' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-600 hover:bg-white/50'}`}
-        >
-          <Users size={18} /> CRM & Equipe
-        </button>
-        <button 
-          onClick={() => setActiveTab('finance')}
-          className={`shrink-0 snap-start px-4 md:px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${activeTab === 'finance' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-600 hover:bg-white/50'}`}
-        >
-          <DollarSign size={18} /> Financeiro
-        </button>
-        <button 
-          onClick={() => setActiveTab('catalog')}
-          className={`shrink-0 snap-start px-4 md:px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${activeTab === 'catalog' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-600 hover:bg-white/50'}`}
-        >
-          <Grip size={18} /> Gerenciar Catálogo
-        </button>
-        <button 
-          onClick={() => setActiveTab('settings')}
-          className={`shrink-0 snap-start px-4 md:px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${activeTab === 'settings' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-600 hover:bg-white/50'}`}
-        >
-          <Settings size={18} /> Configurações
-        </button>
-      </div>
+      <nav className="flex overflow-x-auto pb-4 mb-8 md:mb-12 gap-3 md:gap-6 hide-scrollbar snap-x no-scrollbar sticky top-4 z-[60]">
+        {[
+          { id: 'contracts', label: 'Projetos', icon: LayoutList },
+          { id: 'crm', label: 'Clientes & Time', icon: Users },
+          { id: 'finance', label: 'Tesouraria', icon: DollarSign },
+          { id: 'catalog', label: 'Portfólio', icon: Grip },
+          { id: 'settings', label: 'Estratégia', icon: Settings },
+        ].map((tab, index) => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`shrink-0 snap-start px-6 md:px-8 py-4 rounded-[24px] font-black text-[10px] md:text-xs uppercase tracking-[0.25em] flex items-center gap-3 transition-all border-2
+              ${activeTab === tab.id ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-100' : 'bg-white/30 border-white/40 text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm'}`}
+          >
+            <tab.icon size={16} strokeWidth={index === 0 ? 3 : 2} /> {tab.label}
+          </button>
+        ))}
+      </nav>
 
       {activeTab === 'contracts' ? (
-        <>
-          <div className="mb-6 flex flex-col xs:flex-row sm:justify-between sm:items-center gap-4">
-            <h2 className="text-xl md:text-2xl lux-title">Contratos Ativos</h2>
-            <button onClick={() => setIsCreatingContract(true)} className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto min-h-[44px]">
-              <Plus size={16} /> Novo Contrato
+        <div className="space-y-8 animate-in fade-in duration-700">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Contratos Ativos</h2>
+              <p className="text-sm text-gray-400 font-medium">Você tem {contracts.length} projetos em andamento.</p>
+            </div>
+            <button onClick={() => setIsCreatingContract(true)} className="bg-gray-900 text-white px-8 py-4 rounded-[24px] text-sm font-black uppercase tracking-widest hover:bg-blue-700 hover:scale-105 transition-all flex items-center justify-center gap-2 shadow-xl shadow-gray-200 w-full sm:w-auto">
+              <Plus size={18} strokeWidth={3} /> Nova Operação
             </button>
           </div>
 
@@ -119,56 +109,66 @@ export default function AdminDashboard() {
             />
           )}
 
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {contracts.map(contract => (
-              <div key={contract.id} onClick={() => navigate(`/contract/${contract.id}`)} className="glass-card p-6 rounded-3xl flex justify-between items-center cursor-pointer hover:shadow-lg transition-all">
-                <div>
-                  <h2 className="font-semibold text-lg text-gray-900">{contract.clientName}</h2>
-                  <p className="text-sm text-gray-500 mb-2">Produto: {contract.productName}</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${contract.status === 'active' ? 'glass-panel text-green-700 border-green-200' : contract.status === 'completed' ? 'glass-panel text-blue-700 border-blue-200' : 'glass-panel text-gray-700'}`}>
+              <div 
+                key={contract.id} 
+                onClick={() => navigate(`/contract/${contract.id}`)} 
+                className="group glass-card p-0 rounded-[32px] overflow-hidden flex flex-col cursor-pointer border-none shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 bg-white/50 hover:-translate-y-2"
+              >
+                <div className="p-8 pb-4">
+                  <div className="flex justify-between items-start mb-6">
+                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] backdrop-blur-md border shadow-sm
+                      ${contract.status === 'active' ? 'bg-blue-600 text-white border-blue-500' : contract.status === 'completed' ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                       {contract.status === 'active' ? 'Em Progresso' : contract.status === 'completed' ? 'Finalizado' : 'Cancelado'}
                     </span>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingContract(contract); }}
+                        className="p-3 bg-white text-blue-600 rounded-full shadow-sm hover:shadow-md transition-all"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        onClick={(e) => handleDeleteContract(e, contract.id)}
+                        className="p-3 bg-white text-red-500 rounded-full shadow-sm hover:shadow-md transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
+                  
+                  <h2 className="font-black text-2xl text-gray-900 mb-1 tracking-tight group-hover:text-blue-600 transition-colors uppercase leading-tight">{contract.clientName}</h2>
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-6">{contract.productName}</p>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingContract(contract);
-                    }}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Editar contrato"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button 
-                    onClick={(e) => handleDeleteContract(e, contract.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Excluir contrato"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                  <ChevronRight className="text-gray-400" />
+                <div className="mt-auto bg-gray-50/50 p-6 flex justify-between items-center border-t border-gray-50 group-hover:bg-blue-50/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-300 group-hover:text-blue-600 transition-colors border border-gray-100">
+                      <LayoutList size={14} />
+                    </div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Painel de Controle</span>
+                  </div>
+                  <ChevronRight size={18} className="text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
             ))}
-            {contracts.length === 0 && (
-              <div className="text-center py-12 glass-card rounded-3xl border-dashed border-2 border-white/50">
-                <p className="text-gray-500">Nenhum contrato ativo no momento.</p>
-              </div>
-            )}
           </div>
-        </>
-      ) : activeTab === 'crm' ? (
-        <AdminCRM />
-      ) : activeTab === 'finance' ? (
-        <AdminFinance />
-      ) : activeTab === 'catalog' ? (
-        <AdminProducts />
+
+          {contracts.length === 0 && (
+            <div className="text-center py-24 glass-card rounded-[40px] border-dashed border-2 border-white/50 bg-white/10">
+              <LayoutList size={48} className="mx-auto text-gray-300 mb-6 opacity-20" />
+              <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Nenhum contrato ativo no sistema</p>
+            </div>
+          )}
+        </div>
       ) : (
-        <AdminWorkflowConfig />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {activeTab === 'crm' ? <AdminCRM /> : 
+           activeTab === 'finance' ? <AdminFinance /> : 
+           activeTab === 'catalog' ? <AdminProducts /> : 
+           <AdminWorkflowConfig />}
+        </div>
       )}
     </div>
   );

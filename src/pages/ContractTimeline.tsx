@@ -93,13 +93,20 @@ export default function ContractTimeline({ user }: { user: any }) {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
         
         {/* Timeline Component (Visual representation) */}
-        <div className="glass-panel p-6 rounded-3xl mb-8">
+        <section className="glass-panel p-8 md:p-12 rounded-[32px] mb-12 shadow-sm border border-white/40 overflow-hidden">
+          <div className="flex flex-col items-center mb-10 text-center">
+            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-blue-500 mb-2">Progresso do Contrato</h2>
+            <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
+          </div>
           <Timeline steps={sortedSteps} />
-        </div>
+        </section>
 
         {/* Vertical Detailed Layout */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Detalhamento das Etapas</h2>
+        <div className="space-y-8">
+          <div className="flex items-center gap-4 mb-4">
+             <div className="h-4 w-1 bg-gray-900 rounded-full"></div>
+             <h2 className="text-xl font-bold text-gray-900">Detalhamento das Etapas</h2>
+          </div>
           
           {sortedSteps.map((step) => {
             // Compute dynamic status based on progress
@@ -117,22 +124,26 @@ export default function ContractTimeline({ user }: { user: any }) {
 
             if (isCompleted) {
               return (
-                <div key={step.id} className="glass-card border-l-4 border-emerald-500 rounded-2xl p-6 relative overflow-hidden transition-all hover:shadow-md">
-                  <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-bl-xl text-xs font-bold flex items-center gap-1">
-                    <CheckCircle2 size={14} /> Concluída
+                <div key={step.id} className="glass-card border-none rounded-[32px] p-8 relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 group">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                  <div className="absolute top-6 right-8 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 uppercase tracking-wider">
+                    <CheckCircle2 size={12} /> Etapa Concluída
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{step.title}</h3>
-                  <p className="text-sm text-gray-500 mb-4">{step.description || "Etapa finalizada com sucesso."}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h3>
+                  <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-2xl">{step.description || "Esta etapa foi finalizada com sucesso e validada pela equipe técnica."}</p>
                   
                   {step.documentoSignatario && (
-                    <div className="bg-emerald-50/50 p-4 rounded-xl inline-block mt-2 border border-emerald-100/50">
-                      <h4 className="font-semibold text-gray-800 text-sm mb-2 flex items-center gap-2">
-                        <FileText size={16} className="text-emerald-600" /> Documento Registrado
-                      </h4>
-                      <p className="text-xs text-gray-500 mb-2">Responsável: {step.digitalizadoPor}</p>
-                      <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="text-blue-600 text-sm hover:underline font-medium inline-flex items-center gap-1">
-                        Visualizar Arquivo
-                      </a>
+                    <div className="bg-gray-50 p-5 rounded-[24px] inline-flex items-center gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100">
+                      <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-sm mb-0.5">Arquivo de Validação</h4>
+                        <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wide">Digitalizado por {step.digitalizadoPor}</p>
+                        <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="text-blue-600 text-sm hover:underline font-bold inline-flex items-center gap-1">
+                          Ver Documento PDF
+                        </a>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -141,50 +152,65 @@ export default function ContractTimeline({ user }: { user: any }) {
 
             if (isInProgress) {
               return (
-                <div key={step.id} className="glass-card border-l-4 border-blue-600 rounded-2xl p-6 relative shadow-[0_8px_30px_rgb(0,0,0,0.08)] transform scale-[1.02] transition-transform my-8">
-                  <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 px-4 py-1.5 rounded-bl-xl text-xs font-bold flex items-center gap-1 uppercase tracking-wider">
-                    <Clock size={14} /> Em Andamento
-                  </div>
-                  <h3 className="text-2xl lux-title text-gray-900 mb-2">{step.title}</h3>
-                  {step.description && <p className="text-gray-600 mb-4">{step.description}</p>}
-                  <div className="bg-blue-50 text-blue-900 p-5 rounded-xl text-sm mb-6 border border-blue-100 shadow-sm">
-                    <strong>Ação Necessária:</strong> Para avançar e concluir esta etapa, a documentação comprobatória (foto, contrato ou PDF) deve ser anexada abaixo. O resumo da etapa deve ser seguido rigorosamente.
+                <div key={step.id} className="glass-card border-none rounded-[32px] p-8 md:p-10 relative shadow-[0_20px_50px_rgba(37,99,235,0.12)] border border-blue-100 transform transition-all my-10">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
+                  <div className="absolute top-8 right-8 bg-blue-600 text-white px-5 py-2 rounded-full text-[10px] font-bold flex items-center gap-2 uppercase tracking-[0.15em] shadow-lg shadow-blue-200">
+                    <Clock size={12} className="animate-spin-slow" /> Ação Necessária
                   </div>
                   
-                  {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
-                    <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} />
-                  )}
+                  <div className="max-w-2xl">
+                    <h3 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">{step.title}</h3>
+                    {step.description && <p className="text-gray-600 mb-8 text-lg leading-relaxed">{step.description}</p>}
+                    
+                    <div className="bg-blue-50/50 text-blue-900 p-6 rounded-[24px] text-sm mb-8 border border-blue-100/50 backdrop-blur-sm">
+                      <p className="flex items-start gap-3">
+                        <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5 shrink-0">i</span>
+                        <span className="opacity-80">Por favor, anexe a documentação comprobatória para esta etapa. O envio solicitará a aprovação da nossa equipe técnica.</span>
+                      </p>
+                    </div>
+                    
+                    {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
+                      <div className="mt-4">
+                        <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             }
 
             if (isPendingAdmin) {
               return (
-                <div key={step.id} className="glass-card border-l-4 border-amber-400 rounded-2xl p-6 relative shadow-md my-8">
-                  <div className="absolute top-0 right-0 bg-amber-100 text-amber-800 px-4 py-1.5 rounded-bl-xl text-xs font-bold flex items-center gap-1 uppercase tracking-wider">
-                    <ShieldCheck size={14} /> Em Validação
+                <div key={step.id} className="glass-card border-none rounded-[32px] p-8 md:p-10 relative shadow-xl border border-amber-100 my-10">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-amber-400"></div>
+                  <div className="absolute top-8 right-8 bg-amber-400 text-white px-5 py-2 rounded-full text-[10px] font-bold flex items-center gap-2 uppercase tracking-[0.15em] shadow-lg shadow-amber-200">
+                    <ShieldCheck size={12} /> Validação Pendente
                   </div>
-                  <h3 className="text-2xl lux-title text-gray-900 mb-4">{step.title}</h3>
                   
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex flex-col sm:flex-row gap-5 items-start">
-                    <ShieldCheck className="w-10 h-10 text-amber-500 shrink-0" />
+                  <div className="flex flex-col md:flex-row gap-8 items-start">
+                    <div className="w-16 h-16 bg-amber-50 rounded-3xl flex items-center justify-center shrink-0 border border-amber-100">
+                      <ShieldCheck className="w-8 h-8 text-amber-500" />
+                    </div>
+                    
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-900 mb-2 text-lg">Aguardando Avaliação</h4>
-                      <p className="text-sm text-gray-700 mb-4 leading-relaxed">
-                        A documentação referente a esta etapa ({step.title}) já foi enviada. Um administrador da Orbe está analisando os anexos para aprovar e liberar automaticamente a próxima fase.
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">{step.title}</h3>
+                      <p className="text-gray-600 mb-8 max-w-xl leading-relaxed">
+                        Recebemos seus documentos. Nossa equipe de engenharia está validando os dados para liberar a próxima fase do cronograma.
                       </p>
                       
                       {user?.role === 'admin' && (
-                        <div className="border-t border-amber-200 pt-5 mt-4">
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Ações do Administrador</p>
-                          {step.documentoSignatario && (
-                            <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="text-blue-700 text-sm hover:underline mb-5 font-semibold flex items-center gap-2 bg-white/50 p-3 rounded-lg border border-amber-100 shadow-sm w-max">
-                              <FileText size={18}/> Revisar Arquivo Anexado por {step.digitalizadoPor}
-                            </a>
-                          )}
-                          <button onClick={() => handleAdminApproveStep(step.id)} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-                            <CheckCircle2 size={20} /> Validar e Concluir Etapa
-                          </button>
+                        <div className="bg-white/60 p-6 rounded-[24px] border border-amber-100 shadow-sm">
+                          <p className="text-[10px] font-black text-amber-800/40 uppercase tracking-[0.2em] mb-4">Painel de Aprovação</p>
+                          <div className="flex flex-wrap gap-4 items-center">
+                            {step.documentoSignatario && (
+                              <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="bg-white hover:bg-gray-50 text-blue-600 text-sm px-5 py-3 rounded-xl border border-gray-100 shadow-sm font-bold flex items-center gap-2 transition-all">
+                                <FileText size={18}/> Ver Documento
+                              </a>
+                            )}
+                            <button onClick={() => handleAdminApproveStep(step.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5 active:translate-y-0">
+                              <CheckCircle2 size={18} /> Aprovar Etapa
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -195,14 +221,16 @@ export default function ContractTimeline({ user }: { user: any }) {
 
             // isFuture
             return (
-              <div key={step.id} className="glass-card border-l-4 border-gray-300 opacity-60 rounded-2xl p-6 bg-white/40 grayscale-[20%] transition-opacity hover:opacity-80">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-gray-200 p-2 rounded-full"><Lock size={16} className="text-gray-500" /></div>
-                  <h3 className="text-lg font-bold text-gray-700">{step.title}</h3>
+              <div key={step.id} className="glass-card border-none rounded-[32px] p-8 bg-white/30 opacity-60 rounded-2xl relative transition-all hover:opacity-100 group">
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-gray-200 transition-colors">
+                    <Lock size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-700 mb-1">{step.title}</h3>
+                    <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Aguardando passos anteriores</p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500 pl-11">
-                  Esta etapa está futura e bloqueada. Será disponibilizada automaticamente para envio de documentos após a conclusão da etapa anterior.
-                </p>
               </div>
             );
           })}
