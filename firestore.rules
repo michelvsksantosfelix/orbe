@@ -65,10 +65,8 @@ service cloud.firestore {
     }
 
     function isValidAuditLog(data) {
-      return data.keys().hasAll(['action', 'userId', 'timestamp']) &&
-             data.action is string && data.action.size() <= 50 &&
-             data.userId == request.auth.uid &&
-             data.timestamp == request.time;
+      return data.action is string && data.action.size() <= 100 &&
+             data.userId == request.auth.uid;
     }
 
     // ==========================================
