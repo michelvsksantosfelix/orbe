@@ -77,8 +77,17 @@ export default function ClientCreateContract({ product, onCancel, onSuccess }: P
         });
       }
 
-      toast.success("Contrato iniciado com sucesso!");
+      toast.success("Contrato iniciado com sucesso! Redirecionando para vendas...");
       onSuccess();
+      
+      let tierText = '';
+      if (pricingTier === 'base') tierText = 'Só Produto';
+      else if (pricingTier === 'shipping') tierText = 'Com Frete';
+      else if (pricingTier === 'installed') tierText = 'Instalado';
+      else tierText = `com Desconto Proposto de R$ ${customPrice}`;
+
+      const whatsappText = `Olá Claudiany! Solicitei a piscina ${product.title} na opção ${tierText} pelo sistema. Gostaria de dar prosseguimento na venda.`;
+      window.open(`https://wa.me/5521992006894?text=${encodeURIComponent(whatsappText)}`, '_blank', 'noopener,noreferrer');
     } catch (e) {
       toast.error("Erro ao iniciar contrato.");
       console.error(e);
