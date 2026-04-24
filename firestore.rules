@@ -102,18 +102,16 @@ service cloud.firestore {
     }
 
     match /contracts/{contractId} {
-      allow get: if isSignedIn() && (existing().clientId == request.auth.uid || isAdmin() || isTeamMember());
-      allow list: if isSignedIn() && (isAdmin() || isTeamMember() || resource.data.clientId == request.auth.uid);
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isAdmin() || isSignedIn(); // Clients create contracts via client dash
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     match /contracts/{contractId}/steps/{stepId} {
-      allow get: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
-                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || isTeamMember());
-      allow list: if isSignedIn() && isValidId(contractId) &&
-                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || isTeamMember());
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       
       allow create: if isAdmin() || isSignedIn(); // Created when contract is created
       
