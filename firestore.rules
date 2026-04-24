@@ -22,7 +22,7 @@ service cloud.firestore {
 
     function isTeamMember() {
       return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor', 'instalador', 'tecnico_piscina', 'entregador', 'admin']);
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor', 'instalador', 'tecnico_piscina', 'entregador', 'admin', 'colaborador']);
     }
 
     // 2. Validation Blueprints
@@ -31,7 +31,7 @@ service cloud.firestore {
              data.uid == request.auth.uid &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.email is string && data.email.size() <= 100 &&
-             data.role in ['client', 'vendedor', 'instalador', 'tecnico_piscina', 'entregador', 'admin'];
+             data.role in ['client', 'vendedor', 'instalador', 'tecnico_piscina', 'entregador', 'admin', 'colaborador'];
     }
 
     function isValidProduct(data) {
@@ -119,7 +119,7 @@ service cloud.firestore {
       
       allow update: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
         (
-          isAdmin() ||
+          isAdmin() || isTeamMember() ||
           (existing().assignedToId == request.auth.uid)
         );
       

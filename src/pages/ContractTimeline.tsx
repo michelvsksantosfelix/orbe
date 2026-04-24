@@ -1,6 +1,31 @@
-import React, { useState, useEffect } from 'react';
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  // Not throwing here to avoid breaking the UI flow, 
+  // but we can add toast or other error reporting.
+  toast.error("Erro na operação de banco de dados");
+}
+
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { doc, getDoc, collection, query, orderBy, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Timeline from '../components/Timeline';
 import FileUploadScanner from '../components/FileUploadScanner';
@@ -33,7 +58,7 @@ export default function ContractTimeline({ user }: { user: any }) {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       setSteps(docs);
     }, (error) => {
-      console.error("ContractTimeline steps listener error:", error);
+      handleFirestoreError(error, OperationType.LIST, `contracts/${contractId}/steps`);
     });
 
     return () => unsubSteps();
@@ -57,7 +82,7 @@ export default function ContractTimeline({ user }: { user: any }) {
         toast.success("Todos os passos concluídos! Contrato finalizado.");
       }
     } catch (error) {
-      toast.error("Erro ao aprovar etapa.");
+      handleFirestoreError(error, OperationType.UPDATE, `contracts/${contractId}/steps`);
     }
   };
 
