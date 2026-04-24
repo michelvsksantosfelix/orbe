@@ -36,7 +36,16 @@ export default function CollabDashboard() {
         if (userRole === 'vendedor' || userRole === 'admin') {
           setTasks(allContracts);
         } else {
-          setTasks(allContracts.filter(c => c.assignedTo === user.uid));
+          // Fetch steps for all contracts and filter by assignedToId
+          const contractsWithSteps = await Promise.all(snapshot.docs.map(async (contractDoc) => {
+            const stepsSnap = await getDocs(collection(contractDoc.ref, 'steps'));
+            return {
+              id: contractDoc.id,
+              ...contractDoc.data(),
+              steps: stepsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+            };
+          }));
+          setTasks(contractsWithSteps.filter(c => c.steps.some((s: any) => s.assignedToId === user.uid)));
         }
       } catch (error) {
         console.error("CollabDashboard fetchTasks error:", error);
