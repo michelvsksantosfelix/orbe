@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc, setDoc, query, collection, getDocs } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { Trash2, Edit2, Check, X, Plus, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Edit2, Check, X, Plus, ArrowUp, ArrowDown, UserPlus } from 'lucide-react';
 
 interface AdminContractManageStepsProps {
   contractId: string;
@@ -14,25 +14,48 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
   const [editTitle, setEditTitle] = useState('');
   const [editStatus, setEditStatus] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editAssignedToId, setEditAssignedToId] = useState('');
   
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newStatus, setNewStatus] = useState('locked');
   const [newDescription, setNewDescription] = useState('');
+  const [newAssignedToId, setNewAssignedToId] = useState('');
+
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCollaborators = async () => {
+      try {
+        const q = query(collection(db, 'users'));
+        const snap = await getDocs(q);
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .filter((u: any) => u.role === 'colaborador' || u.role === 'admin');
+        setCollaborators(docs);
+      } catch (e) {
+        console.error("Erro ao buscar colaboradores", e);
+      }
+    };
+    fetchCollaborators();
+  }, []);
 
   const handleEdit = (step: any) => {
     setEditingId(step.id);
     setEditTitle(step.title);
     setEditStatus(step.status);
     setEditDescription(step.description || '');
+    setEditAssignedToId(step.assignedToId || '');
   };
 
   const handleSaveEdit = async (stepId: string) => {
     try {
+      const assignedUser = collaborators.find(c => c.id === editAssignedToId);
       await updateDoc(doc(db, `contracts/${contractId}/steps`, stepId), {
         title: editTitle,
         status: editStatus,
-        description: editDescription
+        description: editDescription,
+        assignedToId: editAssignedToId || null,
+        assignedToName: assignedUser ? assignedUser.name : null,
       });
       toast.success("Etapa atualizada.");
       setEditingId(null);
@@ -86,6 +109,7 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
     if (!newTitle.trim()) return;
     
     try {
+      const assignedUser = collaborators.find(c => c.id === newAssignedToId);
       const highestOrder = steps.reduce((max, step) => Math.max(max, step.order), 0);
       const newStepId = `step-${Date.now()}`;
       
@@ -94,13 +118,16 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
         order: highestOrder + 1,
         title: newTitle,
         status: newStatus,
-        description: newDescription
+        description: newDescription,
+        assignedToId: newAssignedToId || null,
+        assignedToName: assignedUser ? assignedUser.name : null,
       });
       
       toast.success("Etapa adicionada.");
       setIsAdding(false);
       setNewTitle('');
       setNewDescription('');
+      setNewAssignedToId('');
     } catch (e) {
       toast.error("Erro ao adicionar.");
       console.error(e);
@@ -118,6 +145,7 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
             <tr className="border-b border-white/50 text-gray-500">
               <th className="pb-3 px-2">Ordem</th>
               <th className="pb-3 px-2">Etapa (Título)</th>
+              <th className="pb-3 px-2">Responsável</th>
               <th className="pb-3 px-2">Status</th>
               <th className="pb-3 px-2 text-right">Ações</th>
             </tr>
@@ -136,6 +164,27 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
                     <div>
                       <div className="font-bold">{step.title}</div>
                       {step.description && <div className="text-xs text-gray-500 mt-1 max-w-sm whitespace-pre-wrap">{step.description}</div>}
+                    </div>
+                  )}
+                </td>
+                <td className="py-3 px-2 align-top">
+                  {editingId === step.id ? (
+                    <select value={editAssignedToId} onChange={e => setEditAssignedToId(e.target.value)} className="w-full p-2 rounded-lg bg-white/60 border border-white/50 focus:outline-none text-sm">
+                      <option value="">-- Sem Responsável --</option>
+                      {collaborators.map(c => (
+                        <option key={c.id} value={c.id}>{c.name || c.email}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {step.assignedToName ? (
+                        <div className="flex items-center gap-1 text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+                          <UserPlus size={14} />
+                          <span className="font-medium whitespace-nowrap">{step.assignedToName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">Não atribuído</span>
+                      )}
                     </div>
                   )}
                 </td>
@@ -183,6 +232,12 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
         <form onSubmit={handleAdd} className="mt-4 flex flex-col gap-2 bg-white/30 p-4 rounded-2xl border border-white/50">
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título da nova etapa..." className="w-full sm:flex-grow p-2 rounded-lg bg-white/60 border border-white/50 focus:outline-none min-h-[44px]" required />
+            <select value={newAssignedToId} onChange={e => setNewAssignedToId(e.target.value)} className="w-full sm:w-auto p-2 rounded-lg bg-white/60 border border-white/50 focus:outline-none min-h-[44px] text-sm">
+              <option value="">Atribuir a...</option>
+              {collaborators.map(c => (
+                <option key={c.id} value={c.id}>{c.name || c.email}</option>
+              ))}
+            </select>
             <select value={newStatus} onChange={e => setNewStatus(e.target.value)} className="w-full sm:w-auto p-2 rounded-lg bg-white/60 border border-white/50 focus:outline-none min-h-[44px]">
               <option value="locked">Bloqueado</option>
               <option value="in_progress">Em Progresso</option>

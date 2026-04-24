@@ -197,7 +197,7 @@ export default function ContractTimeline({ user }: { user: any }) {
           <div className="flex items-center gap-4">
             <button onClick={() => {
               if (user?.role === 'admin') navigate('/admin');
-              else if (user?.role === 'collab') navigate('/collab');
+              else if (user?.role === 'colaborador') navigate('/colaborador');
               else navigate('/client');
             }} className="p-3 bg-white/50 hover:bg-white text-gray-800 rounded-full transition-all shadow-sm transform hover:-translate-x-1">
               <ArrowLeft size={20} />
@@ -286,13 +286,13 @@ export default function ContractTimeline({ user }: { user: any }) {
 
                     {renderAdminMessage(step)}
                     
-                    {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
+                    {(user?.role === 'client' || user?.role === 'admin' || user?.uid === step.assignedToId) && (
                       <div className="mt-4">
                         <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} />
                       </div>
                     )}
 
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.uid === step.assignedToId) && (
                       <div className="mt-8 pt-6 border-t border-blue-100 flex justify-end">
                         <button onClick={() => handleAdminApproveStep(step.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5">
                           <CheckCircle2 size={18} /> Concluir Etapa
@@ -339,7 +339,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                       
                       {renderAdminMessage(step)}
 
-                      {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
+                      {(user?.role === 'client' || user?.role === 'admin' || user?.uid === step.assignedToId) && (
                         <div className="mt-4 pt-6 border-t border-gray-100">
                           <h4 className="text-sm font-bold text-gray-700 mb-4">Deseja adicionar mais documentos?</h4>
                           <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} />

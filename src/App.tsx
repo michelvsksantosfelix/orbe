@@ -109,7 +109,7 @@ export default function App() {
           
           {/* Protected Routes */}
           <Route path="/admin/*" element={<ProtectedRoute user={user} allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/collab/*" element={<ProtectedRoute user={user} allowedRole="collab"><CollabDashboard /></ProtectedRoute>} />
+          <Route path="/colaborador/*" element={<ProtectedRoute user={user} allowedRole="colaborador"><CollabDashboard /></ProtectedRoute>} />
           <Route path="/client/*" element={<ProtectedRoute user={user} allowedRole="client"><ClientDashboard /></ProtectedRoute>} />
           
           <Route path="/contract/:contractId" element={user ? <ContractTimeline user={user} /> : <Navigate to="/login" />} />
