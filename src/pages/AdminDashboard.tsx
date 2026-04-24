@@ -10,7 +10,8 @@ import AdminCRM from '../components/AdminCRM';
 import AdminFinance from '../components/AdminFinance';
 import AdminCreateContract from '../components/AdminCreateContract';
 import AdminEditContract from '../components/AdminEditContract';
-
+import LogoManager from '../components/LogoManager';
+import Logo from '../components/Logo';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState<any[]>([]);
@@ -54,11 +55,12 @@ export default function AdminDashboard() {
     <div className="p-4 md:p-8 bg-transparent min-h-screen max-w-7xl mx-auto font-sans">
       <header className="mb-8 md:mb-16 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="Orbe Piscinas" className="w-16 h-16 rounded-full" onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 500 500%22><circle cx=%22250%22 cy=%22250%22 r=%22250%22 fill=%22%232563eb%22/></svg>'; }} />
+          <Logo className="w-16 h-16 rounded-full" />
           <div className="relative group">
             <div className="absolute -left-4 top-0 w-1 h-full bg-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter leading-none mb-3">Orbe Gestão</h1>
             <p className="text-sm md:text-lg font-medium text-gray-500 max-w-md leading-relaxed">Infraestrutura inteligente para controle total de obras e instalações premium.</p>
+            <LogoManager />
           </div>
         </div>
         <button onClick={handleLogout} className="bg-white/40 hover:bg-white text-gray-700 px-6 py-3 rounded-2xl flex items-center gap-2 font-bold text-sm transition-all border border-white/60 shadow-sm hover:shadow-md backdrop-blur-md self-end sm:self-auto uppercase tracking-widest">

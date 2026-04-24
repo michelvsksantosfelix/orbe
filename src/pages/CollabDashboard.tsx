@@ -3,6 +3,8 @@ import { db, auth } from '../lib/firebase';
 import { collection, query, getDocs, onSnapshot, doc, getDoc, orderBy } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, ClipboardList, ChevronRight, Bell } from 'lucide-react';
+import Logo from '../components/Logo';
+
 
 enum OperationType {
   CREATE = 'create',
@@ -98,7 +100,7 @@ export default function CollabDashboard() {
     <div className="p-4 md:p-8 bg-transparent min-h-screen max-w-7xl mx-auto">
       <header className="mb-8 md:mb-10 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="Orbe Piscinas" className="w-16 h-16 rounded-full" onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 500 500%22><circle cx=%22250%22 cy=%22250%22 r=%22250%22 fill=%22%232563eb%22/></svg>'; }} />
+          <Logo className="w-16 h-16 rounded-full" />
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Painel do Colaborador</h1>
             <p className="text-sm md:text-base text-gray-500 mt-1">
