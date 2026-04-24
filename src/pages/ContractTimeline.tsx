@@ -147,10 +147,9 @@ export default function ContractTimeline({ user }: { user: any }) {
   };
 
   const renderDocuments = (step: any, accentColor: 'blue' | 'emerald' | 'amber' = 'blue') => {
-    const hasDocs = Array.isArray(step.documentos) && step.documentos.length > 0;
-    const hasSingleDoc = !!step.documentoSignatario;
+    const hasMetadataDocs = Array.isArray(step.documentosMetadata) && step.documentosMetadata.length > 0;
     
-    if (!hasDocs && !hasSingleDoc) return null;
+    if (!hasMetadataDocs) return null;
 
     const bgMap = {
       blue: 'bg-white border-blue-100 hover:bg-blue-50',
@@ -170,42 +169,32 @@ export default function ContractTimeline({ user }: { user: any }) {
       amber: 'text-blue-600',
     };
 
-    if (hasDocs) {
-      return (
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-          {step.documentos.map((docUrl: string, idx: number) => (
-            <div key={idx} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
-                  <FileText size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-gray-900 text-xs mb-0.5 truncate">{step.documentoTipo || 'Arquivo de Validação'}</h4>
-                  <a href={docUrl} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
-                    Ver Arquivo {idx + 1}
-                  </a>
-                </div>
+    const formatDate = (timestamp: any) => {
+      if (!timestamp) return '';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    return (
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+        {step.documentosMetadata.map((meta: any, idx: number) => (
+          <div key={idx} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
+                <FileText size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-gray-900 text-xs mb-0.5 truncate">{step.documentoTipo || 'Arquivo'}</h4>
+                <a href={meta.url} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
+                  Ver Arquivo
+                </a>
+                <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider truncate">
+                  {meta.uploadedBy} ({meta.uploadedByRole}) • {formatDate(meta.uploadedAt)}
+                </p>
               </div>
             </div>
-          ))}
-        </div>
-      );
-    }
-    
-    return (
-      <div className={`mb-6 p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
-            <FileText size={18} />
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-gray-900 text-sm mb-0.5 truncate">{step.documentoTipo || 'Arquivo de Validação'}</h4>
-            {step.digitalizadoPor && <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Por {step.digitalizadoPor}</p>}
-            <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
-              Ver Documento PDF
-            </a>
-          </div>
-        </div>
+        ))}
       </div>
     );
   };

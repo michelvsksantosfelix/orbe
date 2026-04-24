@@ -136,13 +136,17 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
 
       // Update the step with array of URLs
       const stepRef = doc(db, "contracts", contractId, "steps", stepId);
+      
+      const newDocMetadata = downloadURLs.map(url => ({
+        url,
+        uploadedBy: user.displayName || user.name || 'Usuário',
+        uploadedByRole: user.role || 'Usuário',
+        uploadedAt: serverTimestamp()
+      }));
+
       await updateDoc(stepRef, {
-        documentos: arrayUnion(...downloadURLs), // Array of URLs appended safely
-        documentoSignatario: downloadURLs[0], // Keep for backwards compatibility
+        documentosMetadata: arrayUnion(...newDocMetadata),
         documentoTipo: docType,
-        digitalizadoPor: user.displayName || user.name || 'Usuário',
-        digitalizadoPorCargo: user.role || 'Usuário',
-        dataDigitalizacao: serverTimestamp(),
         status: 'pending_admin_approval'
       });
 
