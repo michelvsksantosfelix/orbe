@@ -4,6 +4,30 @@ import { collection, query, getDocs, onSnapshot, doc, getDoc, orderBy } from 'fi
 import { useNavigate } from 'react-router-dom';
 import { LogOut, ClipboardList, ChevronRight, Bell } from 'lucide-react';
 
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 export default function CollabDashboard() {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<any[]>([]);
@@ -31,6 +55,8 @@ export default function CollabDashboard() {
     const qNotifications = query(collection(db, `users/${user.uid}/notifications`), orderBy('createdAt', 'desc'));
     const unsubscribeNotifications = onSnapshot(qNotifications, (snap) => {
       setNotifications(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}/notifications`);
     });
 
     const fetchTasks = async () => {
@@ -95,18 +121,35 @@ export default function CollabDashboard() {
 
       <div className="grid gap-4">
         {tasks.map(contract => (
-          <div key={contract.id} onClick={() => navigate(`/contract/${contract.id}`)} className="glass-card p-6 rounded-3xl flex justify-between items-center cursor-pointer hover:shadow-lg transition-all">
-            <div className="flex items-center gap-4">
-              <div className="glass-panel p-3 rounded-full text-blue-600">
-                <ClipboardList />
+          <div key={contract.id} className="glass-card rounded-3xl p-6 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate(`/contract/${contract.id}`)}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="glass-panel p-3 rounded-full text-blue-600">
+                  <ClipboardList />
+                </div>
+                <div>
+                   <h2 className="font-semibold text-lg text-gray-900">{contract.clientName}</h2>
+                   <p className="text-sm text-gray-500 mb-1">Produto: {contract.productName}</p>
+                   <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Acessar Cronograma</span>
+                </div>
               </div>
-              <div>
-                 <h2 className="font-semibold text-lg text-gray-900">{contract.clientName}</h2>
-                 <p className="text-sm text-gray-500 mb-1">Produto: {contract.productName}</p>
-                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Acessar Cronograma</span>
-              </div>
+              <ChevronRight className="text-gray-400" />
             </div>
-            <ChevronRight className="text-gray-400" />
+            {contract.steps?.filter((s: any) => s.assignedToId === user?.uid).length > 0 && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 -mx-2">
+                <p className="text-sm text-blue-800 font-medium mb-3">Etapas sob sua responsabilidade:</p>
+                <div className="flex flex-wrap gap-2">
+                  {contract.steps
+                    .filter((s: any) => s.assignedToId === user?.uid)
+                    .map((step: any) => (
+                      <span key={step.id} className="bg-white text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full border border-blue-200 shadow-sm animate-pulse">
+                        {step.title}
+                      </span>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {tasks.length === 0 && (

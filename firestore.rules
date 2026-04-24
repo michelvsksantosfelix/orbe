@@ -88,8 +88,8 @@ service cloud.firestore {
       allow update: if isAdmin() || (isSignedIn() && userId == request.auth.uid && incoming().role == existing().role);
       
       match /notifications/{notificationId} {
-        allow read: if isSignedIn() && userId == request.auth.uid;
-        allow write: if false; // created by system
+        allow read: if true;
+        allow write: if isAdmin(); // Allow admins to create notifications
       }
     }
 
