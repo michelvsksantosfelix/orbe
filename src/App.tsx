@@ -103,9 +103,9 @@ export default function App() {
       <BrowserRouter>
         <ToastContainer position="top-right" autoClose={3000} aria-label="Notifications" />
         <Routes>
-          <Route path="/" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
+          <Route path="/" element={<Navigate to={user ? (['admin'].includes(user.role) ? '/admin' : ['client'].includes(user.role) ? '/client' : '/colaborador') : '/login'} />} />
           
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={`/${user.role}`} />} />
+          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={['admin'].includes(user.role) ? '/admin' : ['client'].includes(user.role) ? '/client' : '/colaborador'} />} />
           
           {/* Protected Routes */}
           <Route path="/admin/*" element={<ProtectedRoute user={user} allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
@@ -122,6 +122,6 @@ export default function App() {
 
 function ProtectedRoute({ children, user, allowedRoles }: { children: React.ReactNode, user: any, allowedRoles: string[] }) {
   if (!user) return <Navigate to="/login" />;
-  if (!allowedRoles.includes(user.role)) return <Navigate to={`/${user.role === 'admin' ? 'admin' : 'colaborador'}`} />; // Redirect to their actual role dashboard
+  if (!allowedRoles.includes(user.role)) return <Navigate to={user.role === 'admin' ? '/admin' : user.role === 'client' ? '/client' : '/colaborador'} />; // Redirect to their actual role dashboard
   return <>{children}</>;
 }
