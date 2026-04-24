@@ -107,9 +107,14 @@ export default function ClientDashboard() {
                 <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.15em]">Explore soluções inteligentes</p>
               </div>
             </div>
-            <button className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] bg-white hover:bg-blue-600 hover:text-white text-gray-900 px-8 py-4 rounded-[24px] transition-all border border-gray-100 shadow-xl shadow-gray-100 w-full sm:w-auto">
+            <a 
+              href="https://wa.me/5521992006894?text=Olá Claudiany! Gostaria de saber mais sobre as piscinas da Orbe."
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] bg-white hover:bg-blue-600 hover:text-white text-gray-900 px-8 py-4 rounded-[24px] transition-all border border-gray-100 shadow-xl shadow-gray-100 w-full sm:w-auto"
+            >
               <MessageCircle size={18} /> Falar com Vendas
-            </button>
+            </a>
           </div>
           
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
