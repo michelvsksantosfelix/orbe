@@ -132,7 +132,25 @@ export default function ContractTimeline({ user }: { user: any }) {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h3>
                   <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-2xl">{step.description || "Esta etapa foi finalizada com sucesso e validada pela equipe técnica."}</p>
                   
-                  {step.documentoSignatario && (
+                  {(step.documentos && step.documentos.length > 0) ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                      {step.documentos.map((docUrl: string, idx: number) => (
+                        <div key={idx} className="bg-gray-50 p-4 rounded-[20px] inline-flex flex-col gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100 w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-200">
+                              <FileText size={16} />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-gray-900 text-xs mb-0.5">{step.documentoTipo || 'Arquivo de Validação'}</h4>
+                              <a href={docUrl} target="_blank" rel="noreferrer" className="text-blue-600 text-xs hover:underline font-bold inline-flex items-center gap-1">
+                                Ver Arquivo {idx + 1}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : step.documentoSignatario && (
                     <div className="bg-gray-50 p-5 rounded-[24px] inline-flex flex-col gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100 w-full">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
@@ -200,7 +218,19 @@ export default function ContractTimeline({ user }: { user: any }) {
                         Recebemos seus documentos. Nossa equipe de engenharia está validando os dados para liberar a próxima fase do cronograma.
                       </p>
                       
-                      {step.documentoSignatario && (
+                      {(step.documentos && step.documentos.length > 0) ? (
+                        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {step.documentos.map((docUrl: string, idx: number) => (
+                            <a key={idx} href={docUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm text-blue-600 font-bold hover:bg-blue-50 transition-all">
+                               <FileText size={20} />
+                               <div className="text-left">
+                                 <p className="text-[10px] text-gray-400 uppercase font-black mb-0.5">Arquivo {idx + 1}</p>
+                                 <span className="text-sm">Ver Documento</span>
+                               </div>
+                            </a>
+                          ))}
+                        </div>
+                      ) : step.documentoSignatario && (
                         <div className="mb-8">
                           <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm text-blue-600 font-bold hover:bg-blue-50 transition-all">
                              <FileText size={20} />

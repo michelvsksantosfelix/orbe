@@ -1,20 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, X } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import imageCompression from 'browser-image-compression';
-import { jsPDF } from "jspdf";
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
 
 interface Props {
   contractId: string;
@@ -55,10 +45,9 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
 
         if (file.type.startsWith('image/')) {
           const options = { 
-            maxSizeMB: 0.2, 
-            maxWidthOrHeight: 1200,
+            maxSizeMB: 0.8, // Good resolution
+            maxWidthOrHeight: 1600,
             useWebWorker: true,
-            initialQuality: 0.5
           };
           fileToProcess = await imageCompression(file, options);
           
@@ -68,18 +57,16 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
             file: fileToProcess
           });
         } else if (file.type === 'application/pdf') {
-          if (capturedPages.length > 0) {
-             toast.warn("PDFs individuais devem ser enviados sozinhos.");
-             capturedPages.forEach(p => URL.revokeObjectURL(p.previewUrl));
-             setCapturedPages([]);
-          }
-          await uploadSingleFile(file);
-          return;
+          newPages.push({
+            id: Math.random().toString(36).substr(2, 9),
+            previewUrl: 'https://cdn-icons-png.flaticon.com/512/337/337946.png', // Generic PDF icon
+            file: file
+          });
         }
       }
 
       setCapturedPages(prev => [...prev, ...newPages]);
-      toast.success(`${newPages.length} página(s) adicionada(s)`);
+      toast.success(`${newPages.length} arquivo(s) adicionado(s)`);
     } catch (error: any) {
       console.error("Erro ao processar ficheiro:", error);
       toast.error("Erro ao processar imagem.");
@@ -93,113 +80,59 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   const removePage = (id: string) => {
     setCapturedPages(prev => {
       const item = prev.find(p => p.id === id);
-      if (item) URL.revokeObjectURL(item.previewUrl);
+      if (item && item.file.type.startsWith('image/')) URL.revokeObjectURL(item.previewUrl);
       return prev.filter(p => p.id !== id);
     });
   };
 
-  const generateAndUploadPDF = async () => {
+  const uploadFiles = async () => {
     if (capturedPages.length === 0) return;
     setLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
+      const uploadPromises = capturedPages.map(async (item, index) => {
+        const extension = item.file.type === 'application/pdf' ? 'pdf' : 'jpg';
+        const storagePath = `contracts/${contractId}/steps/${stepId}/${Date.now()}_page_${index + 1}.${extension}`;
+        const storageRef = ref(storage, storagePath);
+        
+        const snapshot = await uploadBytes(storageRef, item.file);
+        return getDownloadURL(snapshot.ref);
       });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
 
-      for (let i = 0; i < capturedPages.length; i++) {
-        const item = capturedPages[i];
-        if (!item || !item.file) continue;
-
-        if (i > 0) pdf.addPage();
-        
-        try {
-          // Convert file to base64 only when needed for PDF
-          const base64 = await fileToBase64(item.file);
-          const imgProps = pdf.getImageProperties(base64);
-          
-          let finalWidth = pageWidth;
-          let finalHeight = (imgProps.height * pageWidth) / imgProps.width;
-
-          if (finalHeight > pageHeight) {
-            finalHeight = pageHeight;
-            finalWidth = (imgProps.width * pageHeight) / imgProps.height;
-          }
-
-          const xOffset = (pageWidth - finalWidth) / 2;
-          const yOffset = (pageHeight - finalHeight) / 2;
-          
-          pdf.addImage(base64, 'JPEG', xOffset, yOffset, finalWidth, finalHeight, undefined, 'MEDIUM');
-        } catch (imgError) {
-          console.error(`Erro na página ${i}:`, imgError);
-        }
-        
-        if (i % 2 === 0) await new Promise(resolve => setTimeout(resolve, 50));
-      }
-
-      const pdfArrayBuffer = pdf.output('arraybuffer');
-      const pdfFile = new File([pdfArrayBuffer], `${docType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.pdf`, { type: 'application/pdf' });
-      
-      await uploadSingleFile(pdfFile);
-      
-      // Clean up blobs
-      capturedPages.forEach(p => URL.revokeObjectURL(p.previewUrl));
-      setCapturedPages([]);
-      toast.success("Documento salvo com sucesso!");
-    } catch (error: any) {
-      console.error("Erro fatal na digitalização:", error);
-      toast.error(`Falha: ${error.message || 'Erro de memória'}.`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const uploadSingleFile = async (file: File) => {
-    console.log("Iniciando upload de arquivo:", file.name, "tamanho:", file.size);
-    try {
-      const storagePath = `contracts/${contractId}/steps/${stepId}/${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, storagePath);
-      
-      // Upload to Firebase Storage
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log("Download URL obtido:", downloadURL);
+      const downloadURLs = await Promise.all(uploadPromises);
 
       // Audit Log
       await addDoc(collection(db, "audit_logs"), {
-        action: "FILE_UPLOADED",
+        action: "FILES_UPLOADED_BATCH",
         contractId,
         stepId,
         userId: user.uid,
-        fileUrl: downloadURL,
-        fileName: file.name,
+        fileUrls: downloadURLs,
         docType,
         timestamp: serverTimestamp(),
       });
 
-      // Update the step
+      // Update the step with array of URLs
       const stepRef = doc(db, "contracts", contractId, "steps", stepId);
       await updateDoc(stepRef, {
-        documentoSignatario: downloadURL,
+        documentos: downloadURLs, // Array of URLs
+        documentoSignatario: downloadURLs[0], // Keep for backwards compatibility
         documentoTipo: docType,
         digitalizadoPor: user.displayName || user.name || 'Usuário',
         dataDigitalizacao: serverTimestamp(),
         status: 'pending_admin_approval'
       });
 
-      console.log("Documento atualizado no Firestore com sucesso");
-      toast.success("Documento registrado com sucesso!");
+      capturedPages.forEach(p => {
+        if (p.file.type.startsWith('image/')) URL.revokeObjectURL(p.previewUrl);
+      });
+      setCapturedPages([]);
+      toast.success("Documento(s) enviado(s) com sucesso!");
     } catch (error: any) {
-      console.error("Erro no upload para Firebase Storage/Firestore:", error);
-      toast.error(`Erro ao registrar documento: ${error.message}`);
+      console.error("Erro fatal no upload:", error);
+      toast.error(`Falha ao registrar: ${error.message || 'Erro interno'}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -208,26 +141,24 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       {loading && (
         <div className="absolute inset-0 z-[100] bg-white/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in duration-300">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-          <p className="font-bold text-blue-900 animate-pulse">Processando Documento...</p>
-          <p className="text-[10px] text-gray-500 mt-2 px-6 text-center">Por favor, não feche esta janela. Gerar o PDF pode levar alguns segundos dependendo do número de fotos.</p>
+          <p className="font-bold text-blue-900 animate-pulse">Enviando Arquivos...</p>
         </div>
       )}
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <FileText className="text-blue-600" size={24} />
-          Digitalizar Documentos
+          Anexar Documentos
         </h3>
         {capturedPages.length > 0 && (
           <div className="flex gap-2">
-            <button 
-              onClick={() => { setCapturedPages([]); toast.info("Escaneamento limpo."); }}
+             <button 
+              onClick={() => { setCapturedPages([]); toast.info("Limpo"); }}
               className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-              title="Limpar tudo"
             >
               <Trash2 size={20} />
             </button>
             <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full flex items-center">
-              {capturedPages.length} Páginas
+              {capturedPages.length} Itens
             </span>
           </div>
         )}
@@ -255,31 +186,33 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
               <img 
                 src={page.previewUrl} 
                 alt={`Página ${index + 1}`} 
-                className="w-24 h-32 object-cover rounded-xl border-2 border-white shadow-md"
+                className="w-24 h-32 object-cover rounded-xl border-2 border-slate-100 shadow-md"
               />
               <button 
                 onClick={() => removePage(page.id)}
+                type="button"
                 className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg"
               >
                 <X size={12} strokeWidth={3} />
               </button>
               <div className="absolute bottom-1 left-1 bg-black/40 text-white text-[10px] px-1.5 rounded-md backdrop-blur-sm">
-                Pág {index + 1}
+                #{index + 1}
               </div>
             </div>
           ))}
           <button 
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="w-24 h-32 flex-shrink-0 border-2 border-dashed border-blue-200 rounded-xl flex flex-col items-center justify-center text-blue-400 hover:bg-blue-50 transition-colors"
           >
             <Plus size={24} />
-            <span className="text-[10px] font-bold uppercase mt-1">Add Pág</span>
           </button>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-4">
         <button
+          type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={loading}
           className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50"
@@ -289,30 +222,32 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         </button>
 
         <button
+          type="button"
           onClick={() => galleryInputRef.current?.click()}
           disabled={loading}
           className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 text-gray-600 rounded-3xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50"
         >
           <ImageIcon className="w-10 h-10 mb-2 text-blue-500" />
-          <span className="text-xs font-black uppercase">Galeria</span>
+          <span className="text-xs font-black uppercase">Upload</span>
         </button>
       </div>
 
       {capturedPages.length > 0 && (
         <button
-          onClick={generateAndUploadPDF}
+          type="button"
+          onClick={uploadFiles}
           disabled={loading}
           className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:bg-gray-300"
         >
           {loading ? (
             <>
               <Loader2 className="w-6 h-6 animate-spin" />
-              Salvando...
+              Enviando...
             </>
           ) : (
             <>
               <CheckCircle2 className="w-6 h-6" />
-              Salvar Documento
+              Concluir Envio
             </>
           )}
         </button>
