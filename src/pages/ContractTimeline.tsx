@@ -317,7 +317,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                       </div>
                     )}
 
-                    {(user?.role === 'admin' || user?.uid === step.assignedToId) && (
+                    {(user?.role === 'admin') && (
                       <div className="mt-8 pt-6 border-t border-blue-100 flex justify-end">
                         <button onClick={() => handleAdminApproveStep(step.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5">
                           <CheckCircle2 size={18} /> Concluir Etapa

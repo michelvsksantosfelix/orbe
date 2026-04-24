@@ -119,8 +119,11 @@ service cloud.firestore {
       
       allow update: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
         (
-          isAdmin() || isTeamMember() ||
-          (existing().assignedToId == request.auth.uid)
+          isAdmin() ||
+          (
+            (existing().assignedToId == request.auth.uid) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['attachments'])
+          )
         );
       
       allow delete: if isAdmin() && isValidId(contractId) && isValidId(stepId);
