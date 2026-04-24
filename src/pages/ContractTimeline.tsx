@@ -200,15 +200,23 @@ export default function ContractTimeline({ user }: { user: any }) {
                         Recebemos seus documentos. Nossa equipe de engenharia está validando os dados para liberar a próxima fase do cronograma.
                       </p>
                       
+                      {step.documentoSignatario && (
+                        <div className="mb-8">
+                          <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm text-blue-600 font-bold hover:bg-blue-50 transition-all">
+                             <FileText size={20} />
+                             <div className="text-left">
+                               <p className="text-[10px] text-gray-400 uppercase font-black mb-0.5">Documento Enviado</p>
+                               <span className="text-sm">Ver {step.documentoTipo || 'Arquivo'}</span>
+                             </div>
+                          </a>
+                        </div>
+                      )}
+                      
                       {user?.role === 'admin' && (
                         <div className="bg-white/60 p-6 rounded-[24px] border border-amber-100 shadow-sm">
                           <p className="text-[10px] font-black text-amber-800/40 uppercase tracking-[0.2em] mb-4">Painel de Aprovação</p>
                           <div className="flex flex-wrap gap-4 items-center">
-                            {step.documentoSignatario && (
-                              <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="bg-white hover:bg-gray-50 text-blue-600 text-sm px-5 py-3 rounded-xl border border-gray-100 shadow-sm font-bold flex items-center gap-2 transition-all">
-                                <FileText size={18}/> Ver {step.documentoTipo || 'Doc'}
-                              </a>
-                            )}
+                            {/* Admin already sees the link above if we move it, but keeping this for consistency if needed */}
                             <button onClick={() => handleAdminApproveStep(step.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5 active:translate-y-0">
                                <CheckCircle2 size={18} /> Aprovar Etapa
                             </button>

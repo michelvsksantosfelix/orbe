@@ -86,15 +86,33 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   const generateAndUploadPDF = async () => {
     if (capturedPages.length === 0) return;
     setLoading(true);
+    console.log("Iniciando geração de PDF com", capturedPages.length, "páginas");
     
     try {
-      const pdf = new jsPDF();
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
       
       for (let i = 0; i < capturedPages.length; i++) {
+        const item = capturedPages[i];
+        if (!item || !item.base64) {
+          console.warn("Página", i, "inválida, pulando...");
+          continue;
+        }
+
         if (i > 0) pdf.addPage();
         
-        const img = capturedPages[i].base64;
-        const imgProps = pdf.getImageProperties(img);
+        const img = item.base64;
+        let imgProps;
+        try {
+          imgProps = pdf.getImageProperties(img);
+        } catch (e) {
+          console.error("Erro ao obter propriedades da imagem", i, e);
+          continue;
+        }
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
@@ -102,19 +120,31 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       }
 
       const pdfBlob = pdf.output('blob');
+      console.log("PDF gerado como Blob, tamanho:", pdfBlob.size);
+      
+      if (pdfBlob.size === 0) {
+        throw new Error("PDF gerado está vazio.");
+      }
+
       const pdfFile = new File([pdfBlob], `${docType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.pdf`, { type: 'application/pdf' });
       
       await uploadSingleFile(pdfFile);
       setCapturedPages([]);
     } catch (error: any) {
-      console.error("Erro ao gerar PDF:", error);
-      toast.error("Erro ao gerar PDF final.");
+      console.error("Erro crítico ao gerar PDF:", error);
+      toast.error(`Falha na geração do documento: ${error.message || 'Erro interno'}`);
+      // Fallback: If PDF fails, try to upload the first image directly if single page
+      if (capturedPages.length === 1) {
+        console.log("Tentando upload da imagem única como fallback");
+        await uploadSingleFile(capturedPages[0].file);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const uploadSingleFile = async (file: File) => {
+    console.log("Iniciando upload de arquivo:", file.name, "tamanho:", file.size);
     try {
       const storagePath = `contracts/${contractId}/steps/${stepId}/${Date.now()}_${file.name}`;
       const storageRef = ref(storage, storagePath);
@@ -122,6 +152,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       // Upload to Firebase Storage
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log("Download URL obtido:", downloadURL);
 
       // Audit Log
       await addDoc(collection(db, "audit_logs"), {
@@ -145,9 +176,10 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         status: 'pending_admin_approval'
       });
 
+      console.log("Documento atualizado no Firestore com sucesso");
       toast.success("Documento registrado com sucesso!");
     } catch (error: any) {
-      console.error("Erro no upload:", error);
+      console.error("Erro no upload para Firebase Storage/Firestore:", error);
       toast.error(`Erro ao registrar documento: ${error.message}`);
     }
   };
