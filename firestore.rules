@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Primitive Definition
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'michel.advprev@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // 2. Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.role in ['client', 'collab', 'admin'];
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['title', 'description', 'price']) &&
+             data.title is string && data.title.size() <= 150 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.price is number;
+    }
+
+    function isValidContract(data) {
+      return data.keys().hasAll(['clientId', 'clientName', 'productName', 'productId', 'status', 'createdAt', 'updatedAt']) &&
+             data.clientId is string && data.clientId.size() <= 128 &&
+             data.clientName is string && data.clientName.size() <= 100 &&
+             data.productName is string && data.productName.size() <= 150 &&
+             data.productId is string && data.productId.size() <= 128 &&
+             data.status in ['active', 'completed', 'cancelled'] &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    function isValidStep(data) {
+      return data.keys().hasAll(['contractId', 'order', 'title', 'status']) &&
+             data.contractId is string && data.contractId.size() <= 128 &&
+             data.order is number &&
+             data.title is string && data.title.size() <= 100 &&
+             data.status in ['locked', 'in_progress', 'completed', 'pending_admin_approval'];
+    }
+    
+    function isValidStepUpdate(data) {
+      return data.status in ['locked', 'in_progress', 'completed', 'pending_admin_approval'];
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['action', 'userId', 'timestamp']) &&
+             data.action is string && data.action.size() <= 50 &&
+             data.userId == request.auth.uid &&
+             data.timestamp == request.time;
+    }
+
+    // ==========================================
+    // Collections
+    // ==========================================
+
+    match /settings/{docId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && userId == request.auth.uid &&
+                       isValidUser(incoming()) && 
+                       (incoming().role == 'client' || request.auth.token.email == 'michel.advprev@gmail.com');
+      allow update: if isAdmin() || (isSignedIn() && userId == request.auth.uid && incoming().role == existing().role);
+    }
+
+    match /products/{productId} {
+      allow get: if isSignedIn() && isValidId(productId);
+      allow list: if isSignedIn();
+      allow create: if isAdmin() && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isAdmin() && isValidId(productId);
+      allow delete: if isAdmin() && isValidId(productId);
+    }
+
+    match /contracts/{contractId} {
+      allow get: if isSignedIn() && (existing().clientId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isAdmin() || resource.data.clientId == request.auth.uid);
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    match /contracts/{contractId}/steps/{stepId} {
+      allow get: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
+                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || existing().responsibleCollabId == request.auth.uid);
+      allow list: if isSignedIn() && isValidId(contractId) &&
+                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || resource.data.responsibleCollabId == request.auth.uid);
+      
+      allow create: if isAdmin() && isValidId(contractId) && isValidId(stepId) && isValidStep(incoming());
+      
+      allow update: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
+        (
+          isAdmin() ||
+          (existing().responsibleCollabId == request.auth.uid && isValidStepUpdate(incoming()) && 
+           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'documentoSignatario', 'digitalizadoPor', 'dataDigitalizacao']))
+        );
+      
+      allow delete: if isAdmin() && isValidId(contractId) && isValidId(stepId);
+    }
+
+    match /audit_logs/{logId} {
+      allow get: if isAdmin() && isValidId(logId);
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidId(logId) && isValidAuditLog(incoming());
+    }
+  }
+}

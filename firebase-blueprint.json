@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the Orbe platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["client", "collab", "admin"] }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product or pool available in the catalog.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "specifications": { "type": "object" },
+        "price": { "type": "number" },
+        "cost": { "type": "number" },
+        "servicesIncluded": { "type": "array", "items": { "type": "string" } },
+        "image": { "type": "string" }
+      },
+      "required": ["title", "description", "price"]
+    },
+    "Contract": {
+      "title": "Contract",
+      "description": "An active contract for a client.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "productName": { "type": "string" },
+        "productId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "completed", "cancelled"] },
+        "price": { "type": "number" },
+        "cost": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "clientName", "productName", "productId", "status", "createdAt", "updatedAt"]
+    },
+    "Step": {
+      "title": "Step",
+      "description": "A step within a contract timeline.",
+      "type": "object",
+      "properties": {
+        "contractId": { "type": "string" },
+        "order": { "type": "number" },
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["locked", "in_progress", "completed", "pending_admin_approval"] },
+        "responsibleCollabId": { "type": "string" },
+        "documents": { "type": "array" },
+        "photos": { "type": "array" },
+        "documentoSignatario": { "type": "string" },
+        "digitalizadoPor": { "type": "string" },
+        "dataDigitalizacao": { "type": "string", "format": "date-time" }
+      },
+      "required": ["contractId", "order", "title", "status"]
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Immutable log for tracking actions.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "userId": { "type": "string" },
+        "contractId": { "type": "string" },
+        "stepId": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "userId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Users"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Product catalog"
+    },
+    "/contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/Contract" },
+      "description": "Contracts"
+    },
+    "/contracts/{contractId}/steps/{stepId}": {
+      "schema": { "$ref": "#/entities/Step" },
+      "description": "Contract steps"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Audit logs"
+    }
+  }
+}

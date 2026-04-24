@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-display: "Montserrat", sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8f9fa; /* Warm, ultra-clean off-white */
+  background-image: radial-gradient(at 0% 0%, rgba(200, 200, 200, 0.15) 0, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(180, 180, 180, 0.1) 0, transparent 50%);
+  background-attachment: fixed;
+  background-size: cover;
+  color: #1a1a1a;
+  min-height: 100vh;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Webkit Scrollbar for Premium Feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Typography Overrides */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.serif-text {
+  font-family: var(--font-serif);
+}
+
+.lux-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: #111;
+}
+
+/* Glass Panels with refined luxury */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.03);
+}
+
+/* Glass Cards with hover elevation */
+.glass-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(0,0,0,0.02);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px -4px rgba(0,0,0,0.08);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Buttons overriding default blue to premium slate/neutral if not explicitly styled */
+button {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+button:active {
+  transform: scale(0.97);
+}
