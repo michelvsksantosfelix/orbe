@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
-import { collection, query, where, getDocs, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, onSnapshot, doc, getDoc, orderBy } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, ClipboardList, ChevronRight } from 'lucide-react';
+import { LogOut, ClipboardList, ChevronRight, Bell } from 'lucide-react';
 
 export default function CollabDashboard() {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const user = auth.currentUser;
   const [userRole, setUserRole] = useState<string>('');
@@ -26,6 +27,12 @@ export default function CollabDashboard() {
   useEffect(() => {
     if (!user || userRole === '') return;
     
+    // Fetch notifications
+    const qNotifications = query(collection(db, `users/${user.uid}/notifications`), orderBy('createdAt', 'desc'));
+    const unsubscribeNotifications = onSnapshot(qNotifications, (snap) => {
+      setNotifications(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
     const fetchTasks = async () => {
       setLoading(true);
       try {
@@ -54,7 +61,9 @@ export default function CollabDashboard() {
       }
     };
     fetchTasks();
+    return () => unsubscribeNotifications();
   }, [user, userRole]);
+  
   const handleLogout = () => {
     auth.signOut().then(() => navigate('/login'));
   };
@@ -66,6 +75,19 @@ export default function CollabDashboard() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Painel do Colaborador</h1>
           <p className="text-sm md:text-base text-gray-500 mt-1">Veja os serviços sob sua responsabilidade.</p>
         </div>
+        
+        {/* Notifications */}
+        <div className="relative">
+          <button className="text-gray-500 hover:text-gray-900 relative">
+            <Bell size={24} />
+            {notifications.filter(n => !n.read).length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {notifications.filter(n => !n.read).length}
+              </span>
+            )}
+          </button>
+        </div>
+
         <button onClick={handleLogout} className="text-gray-500 hover:text-gray-900 flex items-center gap-2 font-medium self-end sm:self-auto -mt-10 sm:mt-0">
           <LogOut size={20} /> Sair
         </button>

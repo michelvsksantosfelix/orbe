@@ -50,6 +50,8 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
   const handleSaveEdit = async (stepId: string) => {
     try {
       const assignedUser = collaborators.find(c => c.id === editAssignedToId);
+      const oldStep = steps.find(s => s.id === stepId);
+
       await updateDoc(doc(db, `contracts/${contractId}/steps`, stepId), {
         title: editTitle,
         status: editStatus,
@@ -57,6 +59,17 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
         assignedToId: editAssignedToId || null,
         assignedToName: assignedUser ? assignedUser.name : null,
       });
+
+      // Se a etapa for alterada para "em progresso" e antes estava bloqueada, notificar o colaborador
+      if (editStatus === 'in_progress' && oldStep && oldStep.status === 'locked' && editAssignedToId) {
+        await setDoc(doc(collection(db, `users/${editAssignedToId}/notifications`)), {
+          message: `Uma etapa de sua responsabilidade foi aberta: ${editTitle}`,
+          createdAt: new Date(),
+          read: false,
+          contractId: contractId
+        });
+      }
+      
       toast.success("Etapa atualizada.");
       setEditingId(null);
     } catch (e) {
