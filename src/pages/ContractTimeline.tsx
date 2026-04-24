@@ -25,6 +25,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
 import { doc, getDoc, collection, query, orderBy, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Timeline from '../components/Timeline';
