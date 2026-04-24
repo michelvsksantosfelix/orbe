@@ -9,7 +9,7 @@ import imageCompression from 'browser-image-compression';
 interface Props {
   contractId: string;
   stepId: string;
-  user: { uid: string; name: string; displayName?: string | null; email?: string | null };
+  user: { uid: string; name: string; displayName?: string | null; email?: string | null; role?: string };
 }
 
 type ScanItem = {
@@ -127,6 +127,8 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         contractId,
         stepId,
         userId: user.uid,
+        userName: user.displayName || user.name || 'Usuário',
+        userRole: user.role || 'Usuário',
         fileUrls: downloadURLs,
         docType,
         timestamp: serverTimestamp(),
@@ -139,6 +141,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         documentoSignatario: downloadURLs[0], // Keep for backwards compatibility
         documentoTipo: docType,
         digitalizadoPor: user.displayName || user.name || 'Usuário',
+        digitalizadoPorCargo: user.role || 'Usuário',
         dataDigitalizacao: serverTimestamp(),
         status: 'pending_admin_approval'
       });
