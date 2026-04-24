@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-// Orbe Management Application - Documented for deployment
+// Orbe Management Application - Version 1.0.1
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { auth, db } from './lib/firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
