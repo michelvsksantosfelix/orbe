@@ -17,10 +17,7 @@ service cloud.firestore {
     function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
     
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'michel.advprev@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
-      );
+      return isSignedIn() && request.auth.token.email == 'michel.advprev@gmail.com';
     }
 
     function isTeamMember() {
@@ -84,7 +81,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn() && (userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn();
       allow create: if isSignedIn() && userId == request.auth.uid &&
                        isValidUser(incoming()) && 
                        (incoming().role == 'client' || request.auth.token.email == 'michel.advprev@gmail.com');

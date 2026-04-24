@@ -69,15 +69,8 @@ export default function App() {
             }
             setUser({ ...firebaseUser, role });
           } else {
-            // User document doesn't exist, create it
-            const role = firebaseUser.email === 'michel.advprev@gmail.com' ? 'admin' : 'client';
-            await setDoc(userRef, {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || 'Usuário',
-              email: firebaseUser.email,
-              role: role
-            });
-            setUser({ ...firebaseUser, role });
+            console.error("User document does not exist for:", firebaseUser.uid);
+            setUser(null); // Force logout or show unauthorized
           }
           setLoading(false);
         }, (error) => {
