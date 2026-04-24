@@ -97,12 +97,15 @@ export default function CollabDashboard() {
   return (
     <div className="p-4 md:p-8 bg-transparent min-h-screen max-w-7xl mx-auto">
       <header className="mb-8 md:mb-10 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Painel do Colaborador</h1>
-          <p className="text-sm md:text-base text-gray-500 mt-1">
-            Olá, {user?.displayName || user?.email?.split('@')[0]}
-            {userRole && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">{userRole}</span>}
-          </p>
+        <div className="flex items-center gap-4">
+          <img src="/logo.svg" alt="Orbe Piscinas" className="w-16 h-16 rounded-full" onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 500 500%22><circle cx=%22250%22 cy=%22250%22 r=%22250%22 fill=%22%232563eb%22/></svg>'; }} />
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Painel do Colaborador</h1>
+            <p className="text-sm md:text-base text-gray-500 mt-1">
+              Olá, {user?.displayName || user?.email?.split('@')[0]}
+              {userRole && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">{userRole}</span>}
+            </p>
+          </div>
         </div>
         
         {/* Notifications */}
