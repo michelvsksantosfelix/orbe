@@ -108,9 +108,9 @@ export default function App() {
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={`/${user.role}`} />} />
           
           {/* Protected Routes */}
-          <Route path="/admin/*" element={<ProtectedRoute user={user} allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/colaborador/*" element={<ProtectedRoute user={user} allowedRole="colaborador"><CollabDashboard /></ProtectedRoute>} />
-          <Route path="/client/*" element={<ProtectedRoute user={user} allowedRole="client"><ClientDashboard /></ProtectedRoute>} />
+          <Route path="/admin/*" element={<ProtectedRoute user={user} allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/colaborador/*" element={<ProtectedRoute user={user} allowedRoles={['admin', 'vendedor', 'instalador', 'tecnico_piscina', 'entregador']}><CollabDashboard /></ProtectedRoute>} />
+          <Route path="/client/*" element={<ProtectedRoute user={user} allowedRoles={['client']}><ClientDashboard /></ProtectedRoute>} />
           
           <Route path="/contract/:contractId" element={user ? <ContractTimeline user={user} /> : <Navigate to="/login" />} />
           
@@ -120,8 +120,8 @@ export default function App() {
   );
 }
 
-function ProtectedRoute({ children, user, allowedRole }: { children: React.ReactNode, user: any, allowedRole: string }) {
+function ProtectedRoute({ children, user, allowedRoles }: { children: React.ReactNode, user: any, allowedRoles: string[] }) {
   if (!user) return <Navigate to="/login" />;
-  if (user.role !== allowedRole) return <Navigate to={`/${user.role}`} />; // Redirect to their actual role dashboard
+  if (!allowedRoles.includes(user.role)) return <Navigate to={`/${user.role === 'admin' ? 'admin' : 'colaborador'}`} />; // Redirect to their actual role dashboard
   return <>{children}</>;
 }

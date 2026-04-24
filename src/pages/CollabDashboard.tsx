@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
-import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, ClipboardList, ChevronRight } from 'lucide-react';
 
@@ -9,32 +9,43 @@ export default function CollabDashboard() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const user = auth.currentUser;
+  const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
-    if (!user) return;
-    // We would need a collectionGroup query or similar to get all steps across all contracts, 
-    // but without an index that might fail. 
-    // For simplicity, we can fetch all active contracts first and then their steps, or assume Collab sees all active contracts they have access to.
+    const fetchUserRole = async () => {
+      if (!user) return;
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        setUserRole(userSnap.data().role);
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || userRole === '') return;
     
-    // In this MVP, we will fetch contracts (all active) and then filter.
-    // NOTE: This is a hacky workaround without Collection Group indices.
     const fetchTasks = async () => {
       setLoading(true);
       try {
-        const q = query(collection(db, "contracts"), where("status", "==", "active"));
-        const snapshot = await getDocs(q);
-        setTasks(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+        const contractsRef = collection(db, "contracts");
+        const snapshot = await getDocs(contractsRef);
+        const allContracts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        if (userRole === 'vendedor' || userRole === 'admin') {
+          setTasks(allContracts);
+        } else {
+          setTasks(allContracts.filter(c => c.assignedTo === user.uid));
+        }
       } catch (error) {
         console.error("CollabDashboard fetchTasks error:", error);
-        // If permission denied, it's likely because the user is not admin and trying to list all contracts
-        // This is a known limitation in the current MVP without assigned contracts
       } finally {
         setLoading(false);
       }
     };
     fetchTasks();
-  }, [user]);
-
+  }, [user, userRole]);
   const handleLogout = () => {
     auth.signOut().then(() => navigate('/login'));
   };
