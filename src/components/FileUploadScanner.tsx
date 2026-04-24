@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, X } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import imageCompression from 'browser-image-compression';
 
@@ -131,7 +131,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       // Update the step with array of URLs
       const stepRef = doc(db, "contracts", contractId, "steps", stepId);
       await updateDoc(stepRef, {
-        documentos: downloadURLs, // Array of URLs
+        documentos: arrayUnion(...downloadURLs), // Array of URLs appended safely
         documentoSignatario: downloadURLs[0], // Keep for backwards compatibility
         documentoTipo: docType,
         digitalizadoPor: user.displayName || user.name || 'Usuário',

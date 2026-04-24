@@ -243,7 +243,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                       )}
                       
                       {user?.role === 'admin' && (
-                        <div className="bg-white/60 p-6 rounded-[24px] border border-amber-100 shadow-sm">
+                        <div className="bg-white/60 p-6 rounded-[24px] border border-amber-100 shadow-sm mb-6">
                           <p className="text-[10px] font-black text-amber-800/40 uppercase tracking-[0.2em] mb-4">Painel de Aprovação</p>
                           <div className="flex flex-wrap gap-4 items-center">
                             {/* Admin already sees the link above if we move it, but keeping this for consistency if needed */}
@@ -251,6 +251,13 @@ export default function ContractTimeline({ user }: { user: any }) {
                                <CheckCircle2 size={18} /> Aprovar Etapa
                             </button>
                           </div>
+                        </div>
+                      )}
+                      
+                      {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
+                        <div className="mt-4 pt-6 border-t border-gray-100">
+                          <h4 className="text-sm font-bold text-gray-700 mb-4">Deseja adicionar mais documentos?</h4>
+                          <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} />
                         </div>
                       )}
                     </div>
