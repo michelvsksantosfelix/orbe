@@ -14,6 +14,40 @@ import ClientDashboard from './pages/ClientDashboard';
 import CollabDashboard from './pages/CollabDashboard';
 import ContractTimeline from './pages/ContractTimeline';
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("React Error Boundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-red-50 text-center">
+          <h1 className="text-2xl font-bold text-red-900 mb-4">Ops! Algo deu errado.</h1>
+          <p className="text-red-700 mb-6">Ocorreu um erro inesperado no aplicativo. Por favor, tente atualizar a página.</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
+          >
+            Recarregar Aplicativo
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -64,22 +98,24 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <ToastContainer position="top-right" autoClose={3000} aria-label="Notifications" />
-      <Routes>
-        <Route path="/" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
-        
-        <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={`/${user.role}`} />} />
-        
-        {/* Protected Routes */}
-        <Route path="/admin/*" element={<ProtectedRoute user={user} allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/collab/*" element={<ProtectedRoute user={user} allowedRole="collab"><CollabDashboard /></ProtectedRoute>} />
-        <Route path="/client/*" element={<ProtectedRoute user={user} allowedRole="client"><ClientDashboard /></ProtectedRoute>} />
-        
-        <Route path="/contract/:contractId" element={user ? <ContractTimeline user={user} /> : <Navigate to="/login" />} />
-        
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ToastContainer position="top-right" autoClose={3000} aria-label="Notifications" />
+        <Routes>
+          <Route path="/" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
+          
+          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={`/${user.role}`} />} />
+          
+          {/* Protected Routes */}
+          <Route path="/admin/*" element={<ProtectedRoute user={user} allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/collab/*" element={<ProtectedRoute user={user} allowedRole="collab"><CollabDashboard /></ProtectedRoute>} />
+          <Route path="/client/*" element={<ProtectedRoute user={user} allowedRole="client"><ClientDashboard /></ProtectedRoute>} />
+          
+          <Route path="/contract/:contractId" element={user ? <ContractTimeline user={user} /> : <Navigate to="/login" />} />
+          
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, ChevronRight, X } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
@@ -24,7 +24,7 @@ interface Props {
 
 type ScanItem = {
   id: string;
-  base64: string;
+  previewUrl: string;
   file: File;
 };
 
@@ -34,6 +34,12 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   const [docType, setDocType] = useState('Contrato Assinado');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      capturedPages.forEach(p => URL.revokeObjectURL(p.previewUrl));
+    };
+  }, [capturedPages]);
 
   const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -49,23 +55,22 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
 
         if (file.type.startsWith('image/')) {
           const options = { 
-            maxSizeMB: 0.2, // Even more aggressive for mobile memory
+            maxSizeMB: 0.2, 
             maxWidthOrHeight: 1200,
             useWebWorker: true,
-            initialQuality: 0.5,
-            alwaysKeepResolution: false
+            initialQuality: 0.5
           };
           fileToProcess = await imageCompression(file, options);
-          const base64 = await fileToBase64(fileToProcess);
+          
           newPages.push({
             id: Math.random().toString(36).substr(2, 9),
-            base64,
+            previewUrl: URL.createObjectURL(fileToProcess),
             file: fileToProcess
           });
         } else if (file.type === 'application/pdf') {
-          // If a PDF is selected, we upload it directly as it's already a document
           if (capturedPages.length > 0) {
-             toast.warn("PDFs individuais devem ser enviados sozinhos. Limpando fotos capturadas.");
+             toast.warn("PDFs individuais devem ser enviados sozinhos.");
+             capturedPages.forEach(p => URL.revokeObjectURL(p.previewUrl));
              setCapturedPages([]);
           }
           await uploadSingleFile(file);
@@ -86,75 +91,72 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   };
 
   const removePage = (id: string) => {
-    setCapturedPages(prev => prev.filter(p => p.id !== id));
+    setCapturedPages(prev => {
+      const item = prev.find(p => p.id === id);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      return prev.filter(p => p.id !== id);
+    });
   };
 
   const generateAndUploadPDF = async () => {
     if (capturedPages.length === 0) return;
     setLoading(true);
-    console.log("Iniciando geração de PDF com", capturedPages.length, "páginas");
     
     try {
-      // Small delay to allow loader to show
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const pdf = new jsPDF({
-        orientation: 'portrait',
+        orientation: 'p',
         unit: 'mm',
         format: 'a4',
-        compress: true // Enable internal compression
+        compress: true
       });
       
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
       for (let i = 0; i < capturedPages.length; i++) {
         const item = capturedPages[i];
-        if (!item || !item.base64) continue;
+        if (!item || !item.file) continue;
 
         if (i > 0) pdf.addPage();
         
-        const img = item.base64;
-        let imgProps;
         try {
-          imgProps = pdf.getImageProperties(img);
-        } catch (e) {
-          console.error("Erro ao obter propriedades da imagem", i, e);
-          continue;
-        }
+          // Convert file to base64 only when needed for PDF
+          const base64 = await fileToBase64(item.file);
+          const imgProps = pdf.getImageProperties(base64);
+          
+          let finalWidth = pageWidth;
+          let finalHeight = (imgProps.height * pageWidth) / imgProps.width;
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        // Use 'FAST' compression for adding images
-        pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-        
-        // Yield thread after each page to prevent browser freeze
-        if (i % 2 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 50));
+          if (finalHeight > pageHeight) {
+            finalHeight = pageHeight;
+            finalWidth = (imgProps.width * pageHeight) / imgProps.height;
+          }
+
+          const xOffset = (pageWidth - finalWidth) / 2;
+          const yOffset = (pageHeight - finalHeight) / 2;
+          
+          pdf.addImage(base64, 'JPEG', xOffset, yOffset, finalWidth, finalHeight, undefined, 'MEDIUM');
+        } catch (imgError) {
+          console.error(`Erro na página ${i}:`, imgError);
         }
+        
+        if (i % 2 === 0) await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      const pdfBlob = pdf.output('blob');
-      console.log("PDF gerado como Blob, tamanho:", pdfBlob.size);
-      
-      if (pdfBlob.size === 0) {
-        throw new Error("PDF gerado está vazio.");
-      }
-
-      const pdfFile = new File([pdfBlob], `${docType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.pdf`, { type: 'application/pdf' });
+      const pdfArrayBuffer = pdf.output('arraybuffer');
+      const pdfFile = new File([pdfArrayBuffer], `${docType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.pdf`, { type: 'application/pdf' });
       
       await uploadSingleFile(pdfFile);
-      setCapturedPages([]);
-      toast.success("PDF gerado e enviado com sucesso!");
-    } catch (error: any) {
-      console.error("Erro crítico ao gerar PDF:", error);
-      toast.error(`Falha na geração do documento: ${error.message || 'Erro de memória'}`);
       
-      // Fallback: If PDF fails, try to upload images as a gallery if single page or small set
-      if (capturedPages.length === 1) {
-        toast.info("Tentando upload da imagem única como fallback...");
-        await uploadSingleFile(capturedPages[0].file);
-      } else if (capturedPages.length > 0) {
-        toast.info("A geração do PDF falhou (provavelmente falta de memória). Tente enviar menos páginas de cada vez.");
-      }
+      // Clean up blobs
+      capturedPages.forEach(p => URL.revokeObjectURL(p.previewUrl));
+      setCapturedPages([]);
+      toast.success("Documento salvo com sucesso!");
+    } catch (error: any) {
+      console.error("Erro fatal na digitalização:", error);
+      toast.error(`Falha: ${error.message || 'Erro de memória'}.`);
     } finally {
       setLoading(false);
     }
@@ -251,7 +253,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           {capturedPages.map((page, index) => (
             <div key={page.id} className="relative flex-shrink-0 group">
               <img 
-                src={page.base64} 
+                src={page.previewUrl} 
                 alt={`Página ${index + 1}`} 
                 className="w-24 h-32 object-cover rounded-xl border-2 border-white shadow-md"
               />
