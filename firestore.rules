@@ -23,8 +23,9 @@ service cloud.firestore {
       );
     }
 
-    function isCollab() {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'colaborador' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'collab');
+    function isTeamMember() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['vendedor', 'instalador', 'tecnico_piscina', 'entregador', 'admin']);
     }
 
     // 2. Validation Blueprints
@@ -33,7 +34,7 @@ service cloud.firestore {
              data.uid == request.auth.uid &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.email is string && data.email.size() <= 100 &&
-             data.role in ['client', 'collab', 'colaborador', 'admin'];
+             data.role in ['client', 'vendedor', 'instalador', 'tecnico_piscina', 'entregador', 'admin'];
     }
 
     function isValidProduct(data) {
@@ -100,8 +101,8 @@ service cloud.firestore {
     }
 
     match /contracts/{contractId} {
-      allow get: if isSignedIn() && (existing().clientId == request.auth.uid || isAdmin() || isCollab());
-      allow list: if isSignedIn() && (isAdmin() || isCollab() || resource.data.clientId == request.auth.uid);
+      allow get: if isSignedIn() && (existing().clientId == request.auth.uid || isAdmin() || isTeamMember());
+      allow list: if isSignedIn() && (isAdmin() || isTeamMember() || resource.data.clientId == request.auth.uid);
       allow create: if isAdmin() || isSignedIn(); // Clients create contracts via client dash
       allow update: if isAdmin();
       allow delete: if isAdmin();
@@ -109,17 +110,16 @@ service cloud.firestore {
 
     match /contracts/{contractId}/steps/{stepId} {
       allow get: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
-                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || isCollab());
+                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || isTeamMember());
       allow list: if isSignedIn() && isValidId(contractId) &&
-                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || isCollab());
+                    (get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid || isAdmin() || isTeamMember());
       
       allow create: if isAdmin() || isSignedIn(); // Created when contract is created
       
       allow update: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
         (
           isAdmin() ||
-          (existing().assignedToId == request.auth.uid) ||
-          (isCollab()) // We will trust the app logic to enforce who can upload right now to avoid complex queries in rules
+          (existing().assignedToId == request.auth.uid)
         );
       
       allow delete: if isAdmin() && isValidId(contractId) && isValidId(stepId);

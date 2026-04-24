@@ -147,7 +147,10 @@ export default function AdminCRM() {
             <input type="text" placeholder="Telefone / WhatsApp" value={phone} onChange={e => setPhone(e.target.value)} className="p-3 bg-white/60 rounded-xl focus:outline-none" />
             <select value={role} onChange={e => setRole(e.target.value)} className="p-3 bg-white/60 rounded-xl focus:outline-none">
               <option value="client">Cliente</option>
-              <option value="collab">Colaborador</option>
+              <option value="vendedor">Vendedor</option>
+              <option value="instalador">Instalador</option>
+              <option value="tecnico_piscina">Técnico de Piscina</option>
+              <option value="entregador">Entregador</option>
               <option value="admin">Administrador</option>
             </select>
           </div>
@@ -200,16 +203,26 @@ export default function AdminCRM() {
                     {editingId === client.id ? (
                       <select value={role} onChange={e => setRole(e.target.value)} className="p-2 w-full text-sm bg-white border border-gray-200 rounded-lg outline-none">
                         <option value="client">Cliente</option>
-                        <option value="collab">Colaborador</option>
+                        <option value="vendedor">Vendedor</option>
+                        <option value="instalador">Instalador</option>
+                        <option value="tecnico_piscina">Técnico de Piscina</option>
+                        <option value="entregador">Entregador</option>
                         <option value="admin">Administrador</option>
                       </select>
                     ) : (
                       <span className={`px-2 py-1 text-xs rounded-full font-bold ${
                         client.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                        client.role === 'collab' ? 'bg-blue-100 text-blue-700' :
+                        client.role === 'vendedor' ? 'bg-amber-100 text-amber-700' :
+                        client.role === 'instalador' ? 'bg-green-100 text-green-700' :
+                        client.role === 'tecnico_piscina' ? 'bg-orange-100 text-orange-700' :
+                        client.role === 'entregador' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {client.role === 'admin' ? 'Admin' : client.role === 'collab' ? 'Colab' : 'Cliente'}
+                        {client.role === 'admin' ? 'Admin' : 
+                         client.role === 'vendedor' ? 'Vendedor' : 
+                         client.role === 'instalador' ? 'Instalador' : 
+                         client.role === 'tecnico_piscina' ? 'Técnico' : 
+                         client.role === 'entregador' ? 'Entregador' : 'Cliente'}
                       </span>
                     )}
                   </td>

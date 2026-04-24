@@ -30,7 +30,7 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
         const q = query(collection(db, 'users'));
         const snap = await getDocs(q);
         const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-          .filter((u: any) => u.role === 'colaborador' || u.role === 'admin');
+          .filter((u: any) => u.role !== 'client');
         setCollaborators(docs);
       } catch (e) {
         console.error("Erro ao buscar colaboradores", e);
