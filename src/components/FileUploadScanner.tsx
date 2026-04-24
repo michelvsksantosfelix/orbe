@@ -48,7 +48,13 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         let fileToProcess = file;
 
         if (file.type.startsWith('image/')) {
-          const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1600, useWebWorker: false };
+          const options = { 
+            maxSizeMB: 0.2, // Even more aggressive for mobile memory
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+            initialQuality: 0.5,
+            alwaysKeepResolution: false
+          };
           fileToProcess = await imageCompression(file, options);
           const base64 = await fileToBase64(fileToProcess);
           newPages.push({
@@ -89,18 +95,19 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
     console.log("Iniciando geração de PDF com", capturedPages.length, "páginas");
     
     try {
+      // Small delay to allow loader to show
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: 'a4',
+        compress: true // Enable internal compression
       });
       
       for (let i = 0; i < capturedPages.length; i++) {
         const item = capturedPages[i];
-        if (!item || !item.base64) {
-          console.warn("Página", i, "inválida, pulando...");
-          continue;
-        }
+        if (!item || !item.base64) continue;
 
         if (i > 0) pdf.addPage();
         
@@ -116,7 +123,13 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
-        pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        // Use 'FAST' compression for adding images
+        pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+        
+        // Yield thread after each page to prevent browser freeze
+        if (i % 2 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
       }
 
       const pdfBlob = pdf.output('blob');
@@ -130,13 +143,17 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       
       await uploadSingleFile(pdfFile);
       setCapturedPages([]);
+      toast.success("PDF gerado e enviado com sucesso!");
     } catch (error: any) {
       console.error("Erro crítico ao gerar PDF:", error);
-      toast.error(`Falha na geração do documento: ${error.message || 'Erro interno'}`);
-      // Fallback: If PDF fails, try to upload the first image directly if single page
+      toast.error(`Falha na geração do documento: ${error.message || 'Erro de memória'}`);
+      
+      // Fallback: If PDF fails, try to upload images as a gallery if single page or small set
       if (capturedPages.length === 1) {
-        console.log("Tentando upload da imagem única como fallback");
+        toast.info("Tentando upload da imagem única como fallback...");
         await uploadSingleFile(capturedPages[0].file);
+      } else if (capturedPages.length > 0) {
+        toast.info("A geração do PDF falhou (provavelmente falta de memória). Tente enviar menos páginas de cada vez.");
       }
     } finally {
       setLoading(false);
@@ -185,16 +202,32 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 glass-card rounded-[2rem] border border-white/20 shadow-2xl">
+    <div className="flex flex-col gap-6 p-6 glass-card rounded-[2rem] border border-white/20 shadow-2xl relative">
+      {loading && (
+        <div className="absolute inset-0 z-[100] bg-white/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in duration-300">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+          <p className="font-bold text-blue-900 animate-pulse">Processando Documento...</p>
+          <p className="text-[10px] text-gray-500 mt-2 px-6 text-center">Por favor, não feche esta janela. Gerar o PDF pode levar alguns segundos dependendo do número de fotos.</p>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <FileText className="text-blue-600" size={24} />
           Digitalizar Documentos
         </h3>
         {capturedPages.length > 0 && (
-          <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
-            {capturedPages.length} Páginas
-          </span>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => { setCapturedPages([]); toast.info("Escaneamento limpo."); }}
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+              title="Limpar tudo"
+            >
+              <Trash2 size={20} />
+            </button>
+            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full flex items-center">
+              {capturedPages.length} Páginas
+            </span>
+          </div>
         )}
       </div>
 
