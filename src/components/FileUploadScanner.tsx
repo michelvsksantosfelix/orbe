@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { db } from '../lib/firebase';
+import React, { useState, useRef } from 'react';
+import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { db, storage } from '../lib/firebase';
 import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import imageCompression from 'browser-image-compression';
+import { jsPDF } from "jspdf";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -20,106 +22,252 @@ interface Props {
   user: { uid: string; name: string; displayName?: string | null; email?: string | null };
 }
 
+type ScanItem = {
+  id: string;
+  base64: string;
+  file: File;
+};
+
 export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   const [loading, setLoading] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [capturedPages, setCapturedPages] = useState<ScanItem[]>([]);
+  const [docType, setDocType] = useState('Contrato Assinado');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (file: File) => {
-    if (!file) return;
+  const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
     setLoading(true);
-
     try {
-      let fileToUpload = file;
-      let downloadURL = '';
+      const newPages: ScanItem[] = [];
       
-      if (file.type.startsWith('image/')) {
-        toast.info('Comprimindo imagem para salvar...');
-        const options = { maxSizeMB: 0.1, maxWidthOrHeight: 800, useWebWorker: false };
-        fileToUpload = await imageCompression(file, options);
-      } else if (file.size > 800 * 1024) {
-        throw new Error('Arquivo muito grande. O limite atual é de 800KB para PDFs.');
-      }
-      
-      downloadURL = await fileToBase64(fileToUpload);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        let fileToProcess = file;
 
-      // 2. Audit Log (Audit Trail)
+        if (file.type.startsWith('image/')) {
+          const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1600, useWebWorker: false };
+          fileToProcess = await imageCompression(file, options);
+          const base64 = await fileToBase64(fileToProcess);
+          newPages.push({
+            id: Math.random().toString(36).substr(2, 9),
+            base64,
+            file: fileToProcess
+          });
+        } else if (file.type === 'application/pdf') {
+          // If a PDF is selected, we upload it directly as it's already a document
+          if (capturedPages.length > 0) {
+             toast.warn("PDFs individuais devem ser enviados sozinhos. Limpando fotos capturadas.");
+             setCapturedPages([]);
+          }
+          await uploadSingleFile(file);
+          return;
+        }
+      }
+
+      setCapturedPages(prev => [...prev, ...newPages]);
+      toast.success(`${newPages.length} página(s) adicionada(s)`);
+    } catch (error: any) {
+      console.error("Erro ao processar ficheiro:", error);
+      toast.error("Erro ao processar imagem.");
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
+  const removePage = (id: string) => {
+    setCapturedPages(prev => prev.filter(p => p.id !== id));
+  };
+
+  const generateAndUploadPDF = async () => {
+    if (capturedPages.length === 0) return;
+    setLoading(true);
+    
+    try {
+      const pdf = new jsPDF();
+      
+      for (let i = 0; i < capturedPages.length; i++) {
+        if (i > 0) pdf.addPage();
+        
+        const img = capturedPages[i].base64;
+        const imgProps = pdf.getImageProperties(img);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      }
+
+      const pdfBlob = pdf.output('blob');
+      const pdfFile = new File([pdfBlob], `${docType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.pdf`, { type: 'application/pdf' });
+      
+      await uploadSingleFile(pdfFile);
+      setCapturedPages([]);
+    } catch (error: any) {
+      console.error("Erro ao gerar PDF:", error);
+      toast.error("Erro ao gerar PDF final.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadSingleFile = async (file: File) => {
+    try {
+      const storagePath = `contracts/${contractId}/steps/${stepId}/${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, storagePath);
+      
+      // Upload to Firebase Storage
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // Audit Log
       await addDoc(collection(db, "audit_logs"), {
         action: "FILE_UPLOADED",
         contractId,
         stepId,
         userId: user.uid,
         fileUrl: downloadURL,
-        fileName: fileToUpload.name,
+        fileName: file.name,
+        docType,
         timestamp: serverTimestamp(),
       });
 
-      // 3. Update the step with the document and metadata
+      // Update the step
       const stepRef = doc(db, "contracts", contractId, "steps", stepId);
       await updateDoc(stepRef, {
         documentoSignatario: downloadURL,
-        digitalizadoPor: user.displayName || user.name || 'Usuário Desconhecido',
+        documentoTipo: docType,
+        digitalizadoPor: user.displayName || user.name || 'Usuário',
         dataDigitalizacao: serverTimestamp(),
-        status: 'pending_admin_approval' // Vai para admin validar
+        status: 'pending_admin_approval'
       });
 
-      toast.success("Documento registado com sucesso!");
+      toast.success("Documento registrado com sucesso!");
     } catch (error: any) {
       console.error("Erro no upload:", error);
-      if (error.code === 'storage/unauthorized') {
-         toast.error('Erro de permissão no Storage (storage.rules). Peça ao desenvolvedor para liberar acesso.');
-      } else {
-         toast.error(`Erro ao registrar documento: ${error.message || 'Desconhecido'}`);
-      }
-    } finally {
-      setLoading(false);
+      toast.error(`Erro ao registrar documento: ${error.message}`);
     }
   };
 
   return (
-    <div className="flex flex-col gap-4 p-6 glass-card rounded-3xl">
-      <h3 className="text-lg font-semibold text-gray-800">Digitalizar Documento Assinado</h3>
+    <div className="flex flex-col gap-6 p-6 glass-card rounded-[2rem] border border-white/20 shadow-2xl">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <FileText className="text-blue-600" size={24} />
+          Digitalizar Documentos
+        </h3>
+        {capturedPages.length > 0 && (
+          <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
+            {capturedPages.length} Páginas
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Tipo do Documento</label>
+        <select 
+          value={docType}
+          onChange={(e) => setDocType(e.target.value)}
+          className="w-full p-4 bg-white/50 border border-gray-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+        >
+          <option>Contrato Assinado</option>
+          <option>Documento de Identidade (RG/CNH)</option>
+          <option>Comprovante de Residência</option>
+          <option>Documentação Técnica</option>
+          <option>Outros Documentos</option>
+        </select>
+      </div>
       
+      {capturedPages.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto pb-4 pt-2 no-scrollbar">
+          {capturedPages.map((page, index) => (
+            <div key={page.id} className="relative flex-shrink-0 group">
+              <img 
+                src={page.base64} 
+                alt={`Página ${index + 1}`} 
+                className="w-24 h-32 object-cover rounded-xl border-2 border-white shadow-md"
+              />
+              <button 
+                onClick={() => removePage(page.id)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg"
+              >
+                <X size={12} strokeWidth={3} />
+              </button>
+              <div className="absolute bottom-1 left-1 bg-black/40 text-white text-[10px] px-1.5 rounded-md backdrop-blur-sm">
+                Pág {index + 1}
+              </div>
+            </div>
+          ))}
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-24 h-32 flex-shrink-0 border-2 border-dashed border-blue-200 rounded-xl flex flex-col items-center justify-center text-blue-400 hover:bg-blue-50 transition-colors"
+          >
+            <Plus size={24} />
+            <span className="text-[10px] font-bold uppercase mt-1">Add Pág</span>
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
-        {/* Usar Camara */}
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={loading}
-          className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-blue-300 rounded-2xl hover:bg-white/50 transition-colors disabled:opacity-50"
+          className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50"
         >
-          <Camera className="w-8 h-8 text-blue-500 mb-2" />
-          <span className="text-sm font-medium">Tirar Foto / Scan</span>
+          <Camera className="w-10 h-10 mb-2" />
+          <span className="text-xs font-black uppercase">Câmera</span>
         </button>
 
-        {/* Galeria */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => galleryInputRef.current?.click()}
           disabled={loading}
-          className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-white/50 rounded-2xl hover:bg-white/50 transition-colors disabled:opacity-50"
+          className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 text-gray-600 rounded-3xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50"
         >
-          <ImageIcon className="w-8 h-8 text-gray-500 mb-2" />
-          <span className="text-sm font-medium">Galeria</span>
+          <ImageIcon className="w-10 h-10 mb-2 text-blue-500" />
+          <span className="text-xs font-black uppercase">Galeria</span>
         </button>
       </div>
+
+      {capturedPages.length > 0 && (
+        <button
+          onClick={generateAndUploadPDF}
+          disabled={loading}
+          className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:bg-gray-300"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-6 h-6" />
+              Salvar Documento
+            </>
+          )}
+        </button>
+      )}
 
       <input
         type="file"
         ref={fileInputRef}
-        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-        accept="image/*,application/pdf"
+        onChange={handleFileCapture}
+        accept="image/*"
         capture="environment"
         className="hidden"
+        multiple
       />
-
-      {loading && (
-        <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          A processar e a registar documento...
-        </div>
-      )}
-
-      <p className="text-xs text-blue-500 mt-2 text-center">
-        O sistema registrará automaticamente que você ({user.displayName || user.name}) é o responsável por esta cópia digital.
-      </p>
+      <input
+        type="file"
+        ref={galleryInputRef}
+        onChange={handleFileCapture}
+        accept="image/*,application/pdf"
+        className="hidden"
+        multiple
+      />
     </div>
   );
 }

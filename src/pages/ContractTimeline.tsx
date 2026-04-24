@@ -133,16 +133,18 @@ export default function ContractTimeline({ user }: { user: any }) {
                   <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-2xl">{step.description || "Esta etapa foi finalizada com sucesso e validada pela equipe técnica."}</p>
                   
                   {step.documentoSignatario && (
-                    <div className="bg-gray-50 p-5 rounded-[24px] inline-flex items-center gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100">
-                      <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                        <FileText size={20} />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm mb-0.5">Arquivo de Validação</h4>
-                        <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wide">Digitalizado por {step.digitalizadoPor}</p>
-                        <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="text-blue-600 text-sm hover:underline font-bold inline-flex items-center gap-1">
-                          Ver Documento PDF
-                        </a>
+                    <div className="bg-gray-50 p-5 rounded-[24px] inline-flex flex-col gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100 w-full">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                          <FileText size={20} />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 text-sm mb-0.5">{step.documentoTipo || 'Arquivo de Validação'}</h4>
+                          <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wide">Digitalizado por {step.digitalizadoPor}</p>
+                          <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="text-blue-600 text-sm hover:underline font-bold inline-flex items-center gap-1">
+                            Ver Documento PDF
+                          </a>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -204,11 +206,11 @@ export default function ContractTimeline({ user }: { user: any }) {
                           <div className="flex flex-wrap gap-4 items-center">
                             {step.documentoSignatario && (
                               <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="bg-white hover:bg-gray-50 text-blue-600 text-sm px-5 py-3 rounded-xl border border-gray-100 shadow-sm font-bold flex items-center gap-2 transition-all">
-                                <FileText size={18}/> Ver Documento
+                                <FileText size={18}/> Ver {step.documentoTipo || 'Doc'}
                               </a>
                             )}
                             <button onClick={() => handleAdminApproveStep(step.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-emerald-200 hover:-translate-y-0.5 active:translate-y-0">
-                              <CheckCircle2 size={18} /> Aprovar Etapa
+                               <CheckCircle2 size={18} /> Aprovar Etapa
                             </button>
                           </div>
                         </div>
