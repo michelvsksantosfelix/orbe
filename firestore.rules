@@ -120,7 +120,7 @@ service cloud.firestore {
           isAdmin() ||
           (
             (existing().assignedToId == request.auth.uid) &&
-            incoming().diff(existing()).affectedKeys().hasOnly(['attachments'])
+            incoming().diff(existing()).affectedKeys().hasOnly(['documentos', 'documentoSignatario', 'documentoTipo', 'digitalizadoPor', 'digitalizadoPorCargo', 'dataDigitalizacao', 'status'])
           )
         );
       
