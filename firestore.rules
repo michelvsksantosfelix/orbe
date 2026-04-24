@@ -84,8 +84,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && (userId == request.auth.uid || isAdmin());
-      allow list: if isAdmin();
+      allow read: if isSignedIn() && (userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() && userId == request.auth.uid &&
                        isValidUser(incoming()) && 
                        (incoming().role == 'client' || request.auth.token.email == 'michel.advprev@gmail.com');

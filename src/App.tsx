@@ -59,18 +59,25 @@ export default function App() {
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
         
-        unsubscribeUserDoc = onSnapshot(userRef, (userSnap) => {
+        unsubscribeUserDoc = onSnapshot(userRef, async (userSnap) => {
           if (userSnap.exists()) {
             const data = userSnap.data();
             let role = data.role;
             // Bootstrap owner to admin automatically
             if (firebaseUser.email === 'michel.advprev@gmail.com' && role !== 'admin') {
                role = 'admin';
-               // Notice: we don't 'await setDoc' here because rules might block it from client if not already admin, but we force their local state to admin so they can see the screen. Actually, let's keep it simple.
             }
             setUser({ ...firebaseUser, role });
           } else {
-            setUser({ ...firebaseUser, role: firebaseUser.email === 'michel.advprev@gmail.com' ? 'admin' : 'client' });
+            // User document doesn't exist, create it
+            const role = firebaseUser.email === 'michel.advprev@gmail.com' ? 'admin' : 'client';
+            await setDoc(userRef, {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || 'Usuário',
+              email: firebaseUser.email,
+              role: role
+            });
+            setUser({ ...firebaseUser, role });
           }
           setLoading(false);
         }, (error) => {
