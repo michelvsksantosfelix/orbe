@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, X } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Plus, Trash2, FileText, CheckCircle2, X } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
 import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
@@ -22,7 +22,6 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   const [loading, setLoading] = useState(false);
   const [capturedPages, setCapturedPages] = useState<ScanItem[]>([]);
   const [docType, setDocType] = useState('Contrato Assinado');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
 
@@ -78,7 +77,6 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       toast.error("Erro ao processar imagem.");
     } finally {
       setLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
       if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
   };
@@ -222,7 +220,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           ))}
           <button 
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => galleryInputRef.current?.click()}
             className="w-24 h-32 flex-shrink-0 border-2 border-dashed border-blue-200 rounded-xl flex flex-col items-center justify-center text-blue-400 hover:bg-blue-50 transition-colors"
           >
             <Plus size={24} />
@@ -230,25 +228,16 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={loading}
-          className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50"
-        >
-          <Camera className="w-10 h-10 mb-2" />
-          <span className="text-xs font-black uppercase">Câmera</span>
-        </button>
-
+      <div className="w-full">
         <button
           type="button"
           onClick={() => galleryInputRef.current?.click()}
           disabled={loading}
-          className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 text-gray-600 rounded-3xl hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50"
+          className="w-full flex flex-col items-center justify-center p-6 bg-white border-2 border-dashed border-blue-200 text-blue-600 rounded-3xl hover:bg-blue-50 transition-all active:scale-95 disabled:opacity-50"
         >
           <ImageIcon className="w-10 h-10 mb-2 text-blue-500" />
-          <span className="text-xs font-black uppercase">Upload</span>
+          <span className="text-xs font-black uppercase">Selecionar Arquivos</span>
+          <span className="text-[10px] text-gray-400 mt-1">Imagens ou PDFs</span>
         </button>
       </div>
 
@@ -273,15 +262,6 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         </button>
       )}
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileCapture}
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        multiple
-      />
       <input
         type="file"
         ref={galleryInputRef}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { db } from '../lib/firebase';
 import { doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { Trash2, Edit2, Check, X, Plus } from 'lucide-react';
+import { Trash2, Edit2, Check, X, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface AdminContractManageStepsProps {
   contractId: string;
@@ -50,6 +50,34 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
     } catch (e) {
       toast.error("Erro ao remover.");
       console.error(e);
+    }
+  };
+
+  const handleMoveStep = async (stepId: string, direction: 'up' | 'down') => {
+    const sortedSteps = [...steps].sort((a, b) => a.order - b.order);
+    const index = sortedSteps.findIndex(s => s.id === stepId);
+    if (index === -1) return;
+
+    if (direction === 'up' && index > 0) {
+      const prevStep = sortedSteps[index - 1];
+      try {
+        await Promise.all([
+          updateDoc(doc(db, `contracts/${contractId}/steps`, stepId), { order: prevStep.order }),
+          updateDoc(doc(db, `contracts/${contractId}/steps`, prevStep.id), { order: sortedSteps[index].order })
+        ]);
+      } catch (e) {
+        toast.error("Erro ao reordenar.");
+      }
+    } else if (direction === 'down' && index < sortedSteps.length - 1) {
+      const nextStep = sortedSteps[index + 1];
+      try {
+        await Promise.all([
+          updateDoc(doc(db, `contracts/${contractId}/steps`, stepId), { order: nextStep.order }),
+          updateDoc(doc(db, `contracts/${contractId}/steps`, nextStep.id), { order: sortedSteps[index].order })
+        ]);
+      } catch (e) {
+        toast.error("Erro ao reordenar.");
+      }
     }
   };
 
@@ -137,7 +165,9 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
                        <button onClick={() => setEditingId(null)} className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"><X size={16} /></button>
                     </div>
                   ) : (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => handleMoveStep(step.id, 'up')} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg title='Mover para cima'"><ArrowUp size={16} /></button>
+                      <button onClick={() => handleMoveStep(step.id, 'down')} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg title='Mover para baixo'"><ArrowDown size={16} /></button>
                       <button onClick={() => handleEdit(step)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg title='Editar'"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete(step.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg title='Excluir'"><Trash2 size={16} /></button>
                     </div>

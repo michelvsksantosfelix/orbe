@@ -6,7 +6,7 @@ import Timeline from '../components/Timeline';
 import FileUploadScanner from '../components/FileUploadScanner';
 import AdminContractManageSteps from '../components/AdminContractManageSteps';
 import { toast } from 'react-toastify';
-import { ArrowLeft, CheckCircle2, ShieldCheck, FileText, Lock, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck, FileText, Lock, Clock, MessageCircle, Edit2, Plus, X } from 'lucide-react';
 
 export default function ContractTimeline({ user }: { user: any }) {
   const { contractId } = useParams<{ contractId: string }>();
@@ -14,6 +14,7 @@ export default function ContractTimeline({ user }: { user: any }) {
   const [contract, setContract] = useState<any>(null);
   const [steps, setSteps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingAdminMessage, setEditingAdminMessage] = useState<{ stepId: string, message: string } | null>(null);
 
   useEffect(() => {
     if (!contractId) return;
@@ -58,6 +59,129 @@ export default function ContractTimeline({ user }: { user: any }) {
     } catch (error) {
       toast.error("Erro ao aprovar etapa.");
     }
+  };
+
+  const handleSaveAdminMessage = async () => {
+    if (!editingAdminMessage) return;
+    try {
+      await updateDoc(doc(db, `contracts/${contractId}/steps`, editingAdminMessage.stepId), {
+        adminMessage: editingAdminMessage.message
+      });
+      toast.success("Informação salva com sucesso!");
+      setEditingAdminMessage(null);
+    } catch (error) {
+       toast.error("Erro ao salvar informação.");
+       console.error(error);
+    }
+  };
+
+  const renderAdminMessage = (step: any) => {
+    const hasMessage = !!step.adminMessage;
+    const isAdmin = user?.role === 'admin';
+
+    if (!hasMessage && !isAdmin) return null;
+
+    return (
+      <div className="mt-8 mb-4">
+        {hasMessage ? (
+          <div className="bg-amber-50/80 border border-amber-200/60 rounded-[24px] p-6 relative group overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-white shadow-sm border border-amber-100 rounded-xl flex items-center justify-center text-amber-500 shrink-0">
+                <MessageCircle size={20} strokeWidth={2.5} />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-amber-900 font-bold text-sm tracking-wide uppercase mb-1">Informação do Admin</h4>
+                <p className="text-amber-800/90 text-sm leading-relaxed whitespace-pre-wrap">{step.adminMessage}</p>
+              </div>
+            </div>
+            {isAdmin && (
+              <button 
+                onClick={() => setEditingAdminMessage({ stepId: step.id, message: step.adminMessage })}
+                className="absolute top-4 right-4 bg-white p-2.5 rounded-full text-amber-500 hover:text-amber-700 hover:bg-amber-100 transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                title="Editar Informação"
+              >
+                <Edit2 size={16} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+        ) : (
+          isAdmin && (
+            <button
+              onClick={() => setEditingAdminMessage({ stepId: step.id, message: '' })}
+              className="group flex items-center justify-center gap-2 w-full sm:w-auto text-sm text-blue-600 font-bold hover:text-white bg-blue-50 hover:bg-blue-600 px-6 py-3 rounded-xl transition-all border border-blue-200 border-dashed hover:border-solid hover:shadow-lg hover:shadow-blue-200"
+            >
+              <Plus size={18} className="transition-transform group-hover:rotate-90" strokeWidth={2.5} />
+              Adicionar Informação ao Usuário
+            </button>
+          )
+        )}
+      </div>
+    );
+  };
+
+  const renderDocuments = (step: any, accentColor: 'blue' | 'emerald' | 'amber' = 'blue') => {
+    const hasDocs = Array.isArray(step.documentos) && step.documentos.length > 0;
+    const hasSingleDoc = !!step.documentoSignatario;
+    
+    if (!hasDocs && !hasSingleDoc) return null;
+
+    const bgMap = {
+      blue: 'bg-white border-blue-100 hover:bg-blue-50',
+      emerald: 'bg-white border-emerald-100 hover:bg-emerald-50',
+      amber: 'bg-white border-amber-100 hover:bg-amber-50',
+    };
+    
+    const iconBgMap = {
+      blue: 'bg-blue-600 text-white',
+      emerald: 'bg-emerald-500 text-white',
+      amber: 'bg-amber-50 text-amber-500 border border-amber-100',
+    };
+
+    const textColorMap = {
+      blue: 'text-blue-600',
+      emerald: 'text-emerald-600',
+      amber: 'text-blue-600',
+    };
+
+    if (hasDocs) {
+      return (
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+          {step.documentos.map((docUrl: string, idx: number) => (
+            <div key={idx} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
+                  <FileText size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-gray-900 text-xs mb-0.5 truncate">{step.documentoTipo || 'Arquivo de Validação'}</h4>
+                  <a href={docUrl} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
+                    Ver Arquivo {idx + 1}
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return (
+      <div className={`mb-6 p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
+            <FileText size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-gray-900 text-sm mb-0.5 truncate">{step.documentoTipo || 'Arquivo de Validação'}</h4>
+            {step.digitalizadoPor && <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Por {step.digitalizadoPor}</p>}
+            <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
+              Ver Documento PDF
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) return <div className="p-10 text-center">Carregando...</div>;
@@ -132,40 +256,9 @@ export default function ContractTimeline({ user }: { user: any }) {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h3>
                   <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-2xl">{step.description || "Esta etapa foi finalizada com sucesso e validada pela equipe técnica."}</p>
                   
-                  {(Array.isArray(step.documentos) && step.documentos.length > 0) ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                      {step.documentos.map((docUrl: string, idx: number) => (
-                        <div key={idx} className="bg-gray-50 p-4 rounded-[20px] inline-flex flex-col gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100 w-full">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-200">
-                              <FileText size={16} />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-gray-900 text-xs mb-0.5">{step.documentoTipo || 'Arquivo de Validação'}</h4>
-                              <a href={docUrl} target="_blank" rel="noreferrer" className="text-blue-600 text-xs hover:underline font-bold inline-flex items-center gap-1">
-                                Ver Arquivo {idx + 1}
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : step.documentoSignatario && (
-                    <div className="bg-gray-50 p-5 rounded-[24px] inline-flex flex-col gap-4 transition-colors hover:bg-emerald-50 border border-gray-100 group-hover:border-emerald-100 w-full">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                          <FileText size={20} />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-sm mb-0.5">{step.documentoTipo || 'Arquivo de Validação'}</h4>
-                          <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wide">Digitalizado por {step.digitalizadoPor}</p>
-                          <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="text-blue-600 text-sm hover:underline font-bold inline-flex items-center gap-1">
-                            Ver Documento PDF
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {renderDocuments(step, 'emerald')}
+
+                  {renderAdminMessage(step)}
                 </div>
               );
             }
@@ -188,6 +281,10 @@ export default function ContractTimeline({ user }: { user: any }) {
                         <span className="opacity-80">Por favor, anexe a documentação comprobatória para esta etapa. O envio solicitará a aprovação da nossa equipe técnica.</span>
                       </p>
                     </div>
+
+                    {renderDocuments(step, 'blue')}
+
+                    {renderAdminMessage(step)}
                     
                     {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
                       <div className="mt-4">
@@ -218,29 +315,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                         Recebemos seus documentos. Nossa equipe de engenharia está validando os dados para liberar a próxima fase do cronograma.
                       </p>
                       
-                      {(Array.isArray(step.documentos) && step.documentos.length > 0) ? (
-                        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {step.documentos.map((docUrl: string, idx: number) => (
-                            <a key={idx} href={docUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm text-blue-600 font-bold hover:bg-blue-50 transition-all">
-                               <FileText size={20} />
-                               <div className="text-left">
-                                 <p className="text-[10px] text-gray-400 uppercase font-black mb-0.5">Arquivo {idx + 1}</p>
-                                 <span className="text-sm">Ver Documento</span>
-                               </div>
-                            </a>
-                          ))}
-                        </div>
-                      ) : step.documentoSignatario && (
-                        <div className="mb-8">
-                          <a href={step.documentoSignatario} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm text-blue-600 font-bold hover:bg-blue-50 transition-all">
-                             <FileText size={20} />
-                             <div className="text-left">
-                               <p className="text-[10px] text-gray-400 uppercase font-black mb-0.5">Documento Enviado</p>
-                               <span className="text-sm">Ver {step.documentoTipo || 'Arquivo'}</span>
-                             </div>
-                          </a>
-                        </div>
-                      )}
+                      {renderDocuments(step, 'amber')}
                       
                       {user?.role === 'admin' && (
                         <div className="bg-white/60 p-6 rounded-[24px] border border-amber-100 shadow-sm mb-6">
@@ -254,6 +329,8 @@ export default function ContractTimeline({ user }: { user: any }) {
                         </div>
                       )}
                       
+                      {renderAdminMessage(step)}
+
                       {(user?.role === 'client' || user?.role === 'collab' || user?.role === 'admin') && (
                         <div className="mt-4 pt-6 border-t border-gray-100">
                           <h4 className="text-sm font-bold text-gray-700 mb-4">Deseja adicionar mais documentos?</h4>
@@ -278,6 +355,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                     <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Aguardando passos anteriores</p>
                   </div>
                 </div>
+                {renderAdminMessage(step)}
               </div>
             );
           })}
@@ -291,6 +369,56 @@ export default function ContractTimeline({ user }: { user: any }) {
           <AdminContractManageSteps contractId={contractId!} steps={steps} />
         )}
       </main>
+
+      {/* Admin Message Editing Modal */}
+      {editingAdminMessage && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl transform transition-all">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                    <MessageCircle size={20} />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Informação ao Usuário</h3>
+                </div>
+                <button 
+                  onClick={() => setEditingAdminMessage(null)}
+                  className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                Escreva uma mensagem, solicitação ou instrução que ficará em destaque para o cliente nesta etapa.
+              </p>
+              
+              <textarea
+                value={editingAdminMessage.message}
+                onChange={(e) => setEditingAdminMessage({ ...editingAdminMessage, message: e.target.value })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-[20px] p-5 text-gray-700 min-h-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-y text-base"
+                placeholder="Ex: Favor providenciar as fotos do local com urgência para avançarmos com a próxima etapa..."
+              />
+              
+              <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3">
+                <button
+                  onClick={() => setEditingAdminMessage(null)}
+                  className="px-6 py-3.5 font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors order-2 sm:order-1"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveAdminMessage}
+                  className="px-8 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 order-1 sm:order-2 flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={18} />
+                  Salvar Informação
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
