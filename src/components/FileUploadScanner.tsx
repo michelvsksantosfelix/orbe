@@ -33,8 +33,11 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
   }, []);
 
   const handleFileCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const inputFiles = e.target.files;
+    if (!inputFiles || inputFiles.length === 0) return;
+
+    // IMPORTANT: Copy files to an array immediately before async operations
+    const files = Array.from(inputFiles);
 
     setLoading(true);
     try {
@@ -48,7 +51,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           const options = { 
             maxSizeMB: 0.8, // Good resolution
             maxWidthOrHeight: 1600,
-            useWebWorker: true,
+            useWebWorker: false,
           };
           fileToProcess = await imageCompression(file, options);
           

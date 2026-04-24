@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, getDocs, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { Trash2, Plus, Image as ImageIcon, Loader2, Edit2 } from 'lucide-react';
+import { Trash2, Plus, Image as ImageIcon, Loader2, Edit2, X } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -19,6 +19,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // Form State
   const [title, setTitle] = useState('');
@@ -229,7 +230,12 @@ export default function AdminProducts() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map(product => (
             <div key={product.id} className="glass-card rounded-3xl overflow-hidden hover:shadow-lg transition-all relative">
-              <img src={product.image || 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=800'} alt={product.title} className="w-full h-40 object-cover" />
+              <img 
+                src={product.image || 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=800'} 
+                alt={product.title} 
+                className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setSelectedImage(product.image || 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=800')}
+              />
               <div className="absolute top-3 right-3 flex gap-2">
                 <button onClick={() => handleEditInit(product)} className="bg-white/80 p-2 rounded-full text-blue-600 hover:bg-blue-50 transition shadow-sm">
                   <Edit2 size={18} />
@@ -261,6 +267,28 @@ export default function AdminProducts() {
               <p className="text-gray-500">Nenhum produto cadastrado no catálogo.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+            onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+          >
+            <X size={24} strokeWidth={2.5} />
+          </button>
+          
+          <img 
+            src={selectedImage} 
+            alt="Visualização" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
