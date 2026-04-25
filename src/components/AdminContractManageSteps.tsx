@@ -15,14 +15,17 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
   const [editStatus, setEditStatus] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editAssignedToId, setEditAssignedToId] = useState('');
+  const [editExpectedDocType, setEditExpectedDocType] = useState('');
   
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newStatus, setNewStatus] = useState('locked');
   const [newDescription, setNewDescription] = useState('');
   const [newAssignedToId, setNewAssignedToId] = useState('');
+  const [newExpectedDocType, setNewExpectedDocType] = useState('');
 
   const [collaborators, setCollaborators] = useState<any[]>([]);
+  const docTypes = ["Contrato Assinado", "Documento de Identidade (RG/CNH)", "Comprovante de Residência", "Documentação Técnica", "Outros Documentos"];
 
   useEffect(() => {
     const fetchCollaborators = async () => {
@@ -45,6 +48,7 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
     setEditStatus(step.status);
     setEditDescription(step.description || '');
     setEditAssignedToId(step.assignedToId || '');
+    setEditExpectedDocType(step.expectedDocumentType || '');
   };
 
   const handleSaveEdit = async (stepId: string) => {
@@ -58,6 +62,7 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
         description: editDescription,
         assignedToId: editAssignedToId || null,
         assignedToName: assignedUser ? assignedUser.name : null,
+        expectedDocumentType: editExpectedDocType || null,
       });
 
       // Se a etapa for alterada para "em progresso" e antes estava bloqueada, notificar o colaborador
@@ -134,6 +139,7 @@ export default function AdminContractManageSteps({ contractId, steps }: AdminCon
         description: newDescription,
         assignedToId: newAssignedToId || null,
         assignedToName: assignedUser ? assignedUser.name : null,
+        expectedDocumentType: newExpectedDocType || null,
       });
       
       toast.success("Etapa adicionada.");

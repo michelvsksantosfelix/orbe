@@ -234,8 +234,9 @@ export default function ContractTimeline({ user }: { user: any }) {
       }
       doc.setFontSize(14);
       doc.setTextColor(0, 51, 102); // Dark Blue
-      doc.text(`${index + 1}. ${step.title}`, 10, y);
-      y += 8;
+      const titleLines = doc.splitTextToSize(`${index + 1}. ${step.title}`, maxWidth);
+      doc.text(titleLines, 10, y);
+      y += (titleLines.length * 7);
       
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0); // Black
@@ -308,7 +309,7 @@ export default function ContractTimeline({ user }: { user: any }) {
              yAttach += 5;
              doc.text(`Data/Hora: ${uploadedAt}`, 15, yAttach);
              yAttach += 5;
-             doc.text(`Link: ${meta.url.length > 80 ? meta.url.substring(0, 80) + '...' : meta.url}`, 15, yAttach);
+             doc.textWithLink('Clique aqui para baixar/visualizar arquivo', 15, yAttach, { url: meta.url });
              yAttach += 10;
         });
     }
@@ -429,7 +430,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                     
                     {(user?.role === 'client' || user?.role === 'admin' || user?.uid === step.assignedToId) && (
                       <div className="mt-4">
-                        <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} />
+                        <FileUploadScanner contractId={contractId!} stepId={step.id} user={user} expectedDocType={step.expectedDocumentType} />
                       </div>
                     )}
 

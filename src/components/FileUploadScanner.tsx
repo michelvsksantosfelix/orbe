@@ -10,6 +10,7 @@ interface Props {
   contractId: string;
   stepId: string;
   user: { uid: string; name: string; displayName?: string | null; email?: string | null; role?: string };
+  expectedDocType?: string;
 }
 
 type ScanItem = {
@@ -18,10 +19,10 @@ type ScanItem = {
   file: File;
 };
 
-export default function FileUploadScanner({ contractId, stepId, user }: Props) {
+export default function FileUploadScanner({ contractId, stepId, user, expectedDocType }: Props) {
   const [loading, setLoading] = useState(false);
   const [capturedPages, setCapturedPages] = useState<ScanItem[]>([]);
-  const [docType, setDocType] = useState('Contrato Assinado');
+  const [docType, setDocType] = useState(expectedDocType || 'Contrato Assinado');
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
 
@@ -198,11 +199,11 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           onChange={(e) => setDocType(e.target.value)}
           className="w-full p-4 bg-white/50 border border-gray-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
         >
-          <option>Contrato Assinado</option>
-          <option>Documento de Identidade (RG/CNH)</option>
-          <option>Comprovante de Residência</option>
-          <option>Documentação Técnica</option>
-          <option>Outros Documentos</option>
+          <option value="Contrato Assinado">Contrato Assinado {expectedDocType === 'Contrato Assinado' ? '*' : ''}</option>
+          <option value="Documento de Identidade (RG/CNH)">Documento de Identidade (RG/CNH) {expectedDocType === 'Documento de Identidade (RG/CNH)' ? '*' : ''}</option>
+          <option value="Comprovante de Residência">Comprovante de Residência {expectedDocType === 'Comprovante de Residência' ? '*' : ''}</option>
+          <option value="Documentação Técnica">Documentação Técnica {expectedDocType === 'Documentação Técnica' ? '*' : ''}</option>
+          <option value="Outros Documentos">Outros Documentos {expectedDocType === 'Outros Documentos' ? '*' : ''}</option>
         </select>
       </div>
       
