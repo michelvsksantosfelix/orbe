@@ -151,6 +151,16 @@ export default function ContractTimeline({ user }: { user: any }) {
     
     if (!hasMetadataDocs) return null;
 
+    const isEmployee = user?.role === 'colaborador' || user?.role === 'técnico' || user?.role === 'entregador';
+    
+    const docsToShow = hasMetadataDocs 
+      ? (user.role === 'admin' || user.role === 'client' 
+          ? step.documentosMetadata 
+          : step.documentosMetadata.filter((doc: any) => doc.uploadedById === user.uid))
+      : [];
+
+    if (docsToShow.length === 0) return null;
+
     const bgMap = {
       blue: 'bg-white border-blue-100 hover:bg-blue-50',
       emerald: 'bg-white border-emerald-100 hover:bg-emerald-50',
@@ -177,7 +187,7 @@ export default function ContractTimeline({ user }: { user: any }) {
 
     return (
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-        {step.documentosMetadata.map((meta: any, idx: number) => (
+        {docsToShow.map((meta: any, idx: number) => (
           <div key={idx} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>

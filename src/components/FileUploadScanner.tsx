@@ -139,6 +139,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       
       const newDocMetadata = downloadURLs.map(url => ({
         url,
+        uploadedById: user.uid,
         uploadedBy: user.displayName || user.name || 'Usuário',
         uploadedByRole: user.role || 'Usuário',
         uploadedAt: serverTimestamp()
