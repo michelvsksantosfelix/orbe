@@ -190,24 +190,27 @@ export default function ContractTimeline({ user }: { user: any }) {
 
     return (
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-        {docsToShow.map((meta: any) => (
-          <div key={meta.url} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
-                <FileText size={18} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-gray-900 text-xs mb-0.5 truncate">{step.documentoTipo || 'Arquivo'}</h4>
-                <a href={meta.url} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
-                  Ver Arquivo
-                </a>
-                <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider truncate">
-                  {meta.uploadedBy || 'Desconhecido'} ({meta.uploadedByRole || 'Usuário'}) • {formatDate(meta.uploadedAt)}
-                </p>
+        {docsToShow.map((meta: any, idx: number) => {
+          console.log('Rendering document item:', meta);
+          return (
+            <div key={`${meta.url}-${step.id}-${idx}`} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
+                  <FileText size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-gray-900 text-xs mb-0.5 truncate">{step.documentoTipo || 'Arquivo'}</h4>
+                  <a href={meta.url} target="_blank" rel="noreferrer" className={`${textColorMap[accentColor]} text-xs hover:underline font-bold inline-flex items-center gap-1`}>
+                    Ver Arquivo
+                  </a>
+                  <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider truncate">
+                    {meta.uploadedBy || 'Desconhecido'} ({meta.uploadedByRole || 'Usuário'}) • {formatDate(meta.uploadedAt)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

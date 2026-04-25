@@ -109,7 +109,6 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           });
 
         if (error) {
-          console.error("Supabase upload error:", error);
           throw error;
         }
 
@@ -117,10 +116,11 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           .from(bucketName)
           .getPublicUrl(storagePath);
           
-        return publicURLData.publicUrl;
+        return { url: publicURLData.publicUrl, uploadedAt: new Date() };
       });
 
-      const downloadURLs = await Promise.all(uploadPromises);
+      const results = await Promise.all(uploadPromises);
+      const downloadURLs = results.map(r => r.url);
 
       // Audit Log
       await addDoc(collection(db, "audit_logs"), {
@@ -138,12 +138,12 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
       // Update the step with array of URLs
       const stepRef = doc(db, "contracts", contractId, "steps", stepId);
       
-      const newDocMetadata = downloadURLs.map(url => ({
-        url,
+      const newDocMetadata = results.map(r => ({
+        url: r.url,
         uploadedById: user.uid,
         uploadedBy: user.displayName || user.name || 'Usuário',
         uploadedByRole: user.role || 'Usuário',
-        uploadedAt: new Date()
+        uploadedAt: r.uploadedAt
       }));
 
       await updateDoc(stepRef, {
