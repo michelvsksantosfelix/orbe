@@ -100,6 +100,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         
         // Ensure you have a 'documents' bucket created in your Supabase project and it is set to "Public"
         const bucketName = import.meta.env.SUPABASE_STORAGE_BUCKET || import.meta.env.VITE_SUPABASE_STORAGE_BUCKET || 'documents';
+        console.log("Uploading to bucket:", bucketName, "path:", storagePath);
         
         const { data, error } = await supabase.storage
           .from(bucketName)
@@ -109,6 +110,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
           });
 
         if (error) {
+          console.error("Supabase upload error:", error);
           throw error;
         }
 
