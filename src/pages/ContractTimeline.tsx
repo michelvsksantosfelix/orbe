@@ -159,8 +159,6 @@ export default function ContractTimeline({ user }: { user: any }) {
           : step.documentosMetadata.filter((doc: any) => !doc.uploadedById || doc.uploadedById === user.uid))
       : [];
 
-    console.log('DEBUG docsToShow:', docsToShow.length, 'userRole:', user.role, 'uid:', user.uid);
-
     if (docsToShow.length === 0) return null;
 
     const bgMap = {
