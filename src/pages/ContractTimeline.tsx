@@ -217,29 +217,53 @@ export default function ContractTimeline({ user }: { user: any }) {
 
   const generateReport = () => {
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Relatório do Projeto: ${contract.productName}`, 10, 10);
+    doc.setFontSize(20);
+    doc.text(`Relatório do Projeto: ${contract.productName}`, 10, 15);
     doc.setFontSize(12);
-    doc.text(`Cliente: ${contract.clientName}`, 10, 20);
-    doc.text(`Status: ${contract.status === 'completed' ? 'Finalizado' : 'Em andamento'}`, 10, 30);
+    doc.text(`Cliente: ${contract.clientName}`, 10, 25);
+    doc.text(`Status: ${contract.status === 'completed' ? 'Finalizado' : 'Em andamento'}`, 10, 32);
     
     let y = 45;
     steps.forEach((step, index) => {
-      if (y > 280) {
+      if (y > 270) {
         doc.addPage();
-        y = 20;
+        y = 15;
       }
       doc.setFontSize(14);
+      doc.setTextColor(0, 51, 102); // Dark Blue
       doc.text(`${index + 1}. ${step.title}`, 10, y);
       y += 7;
+      
       doc.setFontSize(10);
-      doc.text(`Status: ${step.status}`, 15, y);
-      y += 7;
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text(`Status: ${step.status === 'completed' ? 'Concluído' : step.status === 'in_progress' ? 'Em andamento' : 'Pendente'}`, 15, y);
+      y += 5;
+      
       if (step.description) {
         doc.text(`Descrição: ${step.description}`, 15, y);
-        y += 7;
+        y += 5;
       }
-      y += 10;
+      
+      if (step.assignedToName) {
+        doc.text(`Responsável: ${step.assignedToName}`, 15, y);
+        y += 5;
+      }
+
+      if (step.documentosMetadata && step.documentosMetadata.length > 0) {
+        doc.text(`Documentos enviados (${step.documentosMetadata.length}):`, 15, y);
+        y += 5;
+        step.documentosMetadata.forEach((meta: any) => {
+          if (y > 280) {
+            doc.addPage();
+            y = 10;
+          }
+          doc.setFontSize(9);
+          doc.text(`- ${step.documentoTipo || 'Arquivo'}: ${meta.uploadedBy || 'Desconhecido'} (${meta.uploadedByRole || 'Usuário'})`, 20, y);
+          y += 4;
+        });
+      }
+      
+      y += 8;
     });
     
     doc.save(`relatorio_${contract.clientName.replace(/\s+/g, '_')}.pdf`);
