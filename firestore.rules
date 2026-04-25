@@ -17,7 +17,12 @@ service cloud.firestore {
     function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
     
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'michel.advprev@gmail.com' || request.auth.token.email == 'kadamemlk2009@gmail.com');
+      return isSignedIn() && (
+        request.auth.token.email == 'michel.advprev@gmail.com' || 
+        request.auth.token.email == 'kadamemlk2009@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
     }
 
     function isTeamMember() {
@@ -79,15 +84,18 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && userId == request.auth.uid &&
+      allow get: if isSignedIn() && (userId == request.auth.uid || isAdmin() || isTeamMember());
+      allow list: if isAdmin() || isTeamMember();
+      allow create: if (isSignedIn() && userId == request.auth.uid &&
                        isValidUser(incoming()) && 
-                       (incoming().role == 'client' || request.auth.token.email == 'michel.advprev@gmail.com');
+                       (incoming().role == 'client' || request.auth.token.email == 'michel.advprev@gmail.com')) || 
+                       isAdmin();
       allow update: if isAdmin() || (isSignedIn() && userId == request.auth.uid && incoming().role == existing().role);
+      allow delete: if isAdmin();
       
       match /notifications/{notificationId} {
-        allow read: if true;
-        allow write: if isAdmin(); // Allow admins to create notifications
+        allow read: if isSignedIn() && userId == request.auth.uid;
+        allow write: if isAdmin() || isTeamMember(); // Allow team members to create notifications
       }
     }
 
@@ -100,25 +108,25 @@ service cloud.firestore {
     }
 
     match /contracts/{contractId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isAdmin() || isSignedIn(); // Clients create contracts via client dash
-      allow update: if isAdmin();
+      allow get: if isSignedIn() && (isAdmin() || isTeamMember() || resource.data.clientId == request.auth.uid);
+      allow list: if isSignedIn() && (isAdmin() || isTeamMember() || resource.data.clientId == request.auth.uid);
+      allow create: if isSignedIn() && (isAdmin() || isTeamMember() || incoming().clientId == request.auth.uid);
+      allow update: if isAdmin() || isTeamMember();
       allow delete: if isAdmin();
     }
 
     match /contracts/{contractId}/steps/{stepId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get: if isSignedIn() && (isAdmin() || isTeamMember() || get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid);
+      allow list: if isSignedIn() && (isAdmin() || isTeamMember() || get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid);
       
-      allow create: if isAdmin() || isSignedIn(); // Created when contract is created
+      allow create: if isAdmin() || isTeamMember() || (isSignedIn() && get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == request.auth.uid);
       
       allow update: if isSignedIn() && isValidId(contractId) && isValidId(stepId) &&
         (
           isAdmin() ||
           (
             (existing().assignedToId == request.auth.uid) &&
-            incoming().diff(existing()).affectedKeys().hasOnly(['documentos', 'documentoSignatario', 'documentoTipo', 'digitalizadoPor', 'digitalizadoPorCargo', 'dataDigitalizacao', 'status'])
+            incoming().diff(existing()).affectedKeys().hasOnly(['documentosMetadata', 'documentos', 'documentoSignatario', 'documentoTipo', 'digitalizadoPor', 'digitalizadoPorCargo', 'dataDigitalizacao', 'status'])
           )
         );
       

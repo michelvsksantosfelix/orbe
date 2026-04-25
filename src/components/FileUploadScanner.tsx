@@ -36,7 +36,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
     if (!inputFiles || inputFiles.length === 0) return;
 
     // IMPORTANT: Copy files to an array immediately before async operations
-    const files = Array.from(inputFiles);
+    const files: File[] = Array.from(inputFiles);
 
     setLoading(true);
     try {

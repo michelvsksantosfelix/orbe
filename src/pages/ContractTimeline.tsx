@@ -124,7 +124,7 @@ export default function ContractTimeline({ user }: { user: any }) {
             {isAdmin && (
               <button 
                 onClick={() => setEditingAdminMessage({ stepId: step.id, message: step.adminMessage })}
-                className="absolute top-4 right-4 bg-white p-2.5 rounded-full text-amber-500 hover:text-amber-700 hover:bg-amber-100 transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                className="absolute top-4 right-4 bg-white p-2.5 rounded-full text-amber-500 hover:text-amber-700 hover:bg-amber-100 transition-all opacity-100 md:opacity-0 group-hover:opacity-100 shadow-sm"
                 title="Editar Informação"
               >
                 <Edit2 size={16} strokeWidth={2.5} />

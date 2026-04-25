@@ -131,7 +131,7 @@ export default function AdminWorkflowConfig() {
               />
             </div>
 
-            <button onClick={() => handleRemoveStep(index)} className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1 opacity-0 group-hover:opacity-100">
+            <button onClick={() => handleRemoveStep(index)} className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1 opacity-100 md:opacity-0 group-hover:opacity-100">
               <Trash2 size={18} />
             </button>
           </div>

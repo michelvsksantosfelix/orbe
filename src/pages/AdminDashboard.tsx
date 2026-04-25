@@ -127,7 +127,7 @@ export default function AdminDashboard() {
                       ${contract.status === 'active' ? 'bg-blue-600 text-white border-blue-500' : contract.status === 'completed' ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                       {contract.status === 'active' ? 'Em Progresso' : contract.status === 'completed' ? 'Finalizado' : 'Cancelado'}
                     </span>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={(e) => { e.stopPropagation(); setEditingContract(contract); }}
                         className="p-3 bg-white text-blue-600 rounded-full shadow-sm hover:shadow-md transition-all"
