@@ -154,10 +154,12 @@ export default function ContractTimeline({ user }: { user: any }) {
     const isEmployee = user?.role === 'colaborador' || user?.role === 'técnico' || user?.role === 'entregador';
     
     const docsToShow = hasMetadataDocs 
-      ? (user.role === 'admin' || user.role === 'client' 
+      ? (user.role?.toLowerCase() === 'admin' || user.role?.toLowerCase() === 'client' 
           ? step.documentosMetadata 
           : step.documentosMetadata.filter((doc: any) => doc.uploadedById === user.uid))
       : [];
+
+    console.log('DEBUG docsToShow:', docsToShow.length, 'userRole:', user.role, 'uid:', user.uid);
 
     if (docsToShow.length === 0) return null;
 
