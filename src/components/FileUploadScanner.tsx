@@ -144,7 +144,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
         uploadedById: user.uid,
         uploadedBy: user.displayName || user.name || 'Usuário',
         uploadedByRole: user.role || 'Usuário',
-        uploadedAt: serverTimestamp()
+        uploadedAt: new Date()
       }));
 
       await updateDoc(stepRef, {

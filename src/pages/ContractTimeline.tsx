@@ -156,7 +156,7 @@ export default function ContractTimeline({ user }: { user: any }) {
     const docsToShow = hasMetadataDocs 
       ? (user.role?.toLowerCase() === 'admin' || user.role?.toLowerCase() === 'client' 
           ? step.documentosMetadata 
-          : step.documentosMetadata.filter((doc: any) => doc.uploadedById === user.uid))
+          : step.documentosMetadata.filter((doc: any) => !doc.uploadedById || doc.uploadedById === user.uid))
       : [];
 
     console.log('DEBUG docsToShow:', docsToShow.length, 'userRole:', user.role, 'uid:', user.uid);
