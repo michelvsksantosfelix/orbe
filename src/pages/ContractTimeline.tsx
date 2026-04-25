@@ -32,7 +32,8 @@ import Timeline from '../components/Timeline';
 import FileUploadScanner from '../components/FileUploadScanner';
 import AdminContractManageSteps from '../components/AdminContractManageSteps';
 import { toast } from 'react-toastify';
-import { ArrowLeft, CheckCircle2, ShieldCheck, FileText, Lock, Clock, MessageCircle, Edit2, Plus, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck, FileText, Lock, Clock, MessageCircle, Edit2, Plus, X, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 export default function ContractTimeline({ user }: { user: any }) {
   const { contractId } = useParams<{ contractId: string }>();
@@ -211,6 +212,36 @@ export default function ContractTimeline({ user }: { user: any }) {
     );
   };
 
+  const generateReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Relatório do Projeto: ${contract.productName}`, 10, 10);
+    doc.setFontSize(12);
+    doc.text(`Cliente: ${contract.clientName}`, 10, 20);
+    doc.text(`Status: ${contract.status === 'completed' ? 'Finalizado' : 'Em andamento'}`, 10, 30);
+    
+    let y = 45;
+    steps.forEach((step, index) => {
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(14);
+      doc.text(`${index + 1}. ${step.title}`, 10, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.text(`Status: ${step.status}`, 15, y);
+      y += 7;
+      if (step.description) {
+        doc.text(`Descrição: ${step.description}`, 15, y);
+        y += 7;
+      }
+      y += 10;
+    });
+    
+    doc.save(`relatorio_${contract.clientName.replace(/\s+/g, '_')}.pdf`);
+  };
+
   if (loading) return <div className="p-10 text-center">Carregando...</div>;
   if (!contract) return <div className="p-10 text-center">Contrato não encontrado.</div>;
 
@@ -221,7 +252,16 @@ export default function ContractTimeline({ user }: { user: any }) {
       <header className="glass-panel mx-4 mt-4 mb-2 rounded-[24px] sticky top-4 z-50 overflow-hidden shadow-sm">
         <div className="absolute inset-0 bg-white/20 backdrop-blur-2xl"></div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {user?.role === 'admin' && (
+              <button 
+                onClick={generateReport}
+                className="p-3 bg-white/50 hover:bg-white text-gray-800 rounded-full transition-all shadow-sm"
+                title="Gerar Relatório"
+              >
+                <FileDown size={20} />
+              </button>
+            )}
             <button onClick={() => {
               if (user?.role === 'admin') navigate('/admin');
               else if (user?.role === 'colaborador') navigate('/colaborador');
