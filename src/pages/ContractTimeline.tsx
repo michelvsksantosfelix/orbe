@@ -149,6 +149,8 @@ export default function ContractTimeline({ user }: { user: any }) {
   const renderDocuments = (step: any, accentColor: 'blue' | 'emerald' | 'amber' = 'blue') => {
     const hasMetadataDocs = Array.isArray(step.documentosMetadata) && step.documentosMetadata.length > 0;
     
+    console.log('Rendering documents for step:', step.title, 'documentosMetadata:', step.documentosMetadata);
+
     if (!hasMetadataDocs) return null;
 
     const isEmployee = user?.role === 'colaborador' || user?.role === 'técnico' || user?.role === 'entregador';
@@ -187,8 +189,8 @@ export default function ContractTimeline({ user }: { user: any }) {
 
     return (
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-        {docsToShow.map((meta: any, idx: number) => (
-          <div key={idx} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+        {docsToShow.map((meta: any) => (
+          <div key={meta.url} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
                 <FileText size={18} />
@@ -199,7 +201,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                   Ver Arquivo
                 </a>
                 <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider truncate">
-                  {meta.uploadedBy} ({meta.uploadedByRole}) • {formatDate(meta.uploadedAt)}
+                  {meta.uploadedBy || 'Desconhecido'} ({meta.uploadedByRole || 'Usuário'}) • {formatDate(meta.uploadedAt)}
                 </p>
               </div>
             </div>

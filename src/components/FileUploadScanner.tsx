@@ -169,7 +169,7 @@ export default function FileUploadScanner({ contractId, stepId, user }: Props) {
     <div className="flex flex-col gap-6 p-6 glass-card rounded-[2rem] border border-white/20 shadow-2xl relative overflow-hidden">
       <div className={`absolute inset-0 z-[100] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center transition-all duration-300 ${loading ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-        <p className="font-bold text-blue-900 animate-pulse">Enviando Arquivos...</p>
+        <p className="font-bold text-blue-900 animate-pulse">{loading ? 'Salvando documentos no servidor...' : 'Enviando...'}</p>
       </div>
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
