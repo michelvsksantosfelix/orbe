@@ -193,7 +193,7 @@ export default function ContractTimeline({ user }: { user: any }) {
         {docsToShow.map((meta: any, idx: number) => {
           console.log('Rendering document item:', meta);
           return (
-            <div key={`${meta.url}-${step.id}-${idx}`} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+            <div key={meta.url} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
                   <FileText size={18} />
@@ -217,6 +217,9 @@ export default function ContractTimeline({ user }: { user: any }) {
 
   const generateReport = () => {
     const doc = new jsPDF();
+    const maxWidth = 180;
+    const lineHeight = 5;
+
     doc.setFontSize(20);
     doc.text(`Relatório do Projeto: ${contract.productName}`, 10, 15);
     doc.setFontSize(12);
@@ -232,39 +235,83 @@ export default function ContractTimeline({ user }: { user: any }) {
       doc.setFontSize(14);
       doc.setTextColor(0, 51, 102); // Dark Blue
       doc.text(`${index + 1}. ${step.title}`, 10, y);
-      y += 7;
+      y += 8;
       
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0); // Black
       doc.text(`Status: ${step.status === 'completed' ? 'Concluído' : step.status === 'in_progress' ? 'Em andamento' : 'Pendente'}`, 15, y);
-      y += 5;
+      y += 6;
       
       if (step.description) {
-        doc.text(`Descrição: ${step.description}`, 15, y);
-        y += 5;
+        const descLines = doc.splitTextToSize(`Descrição: ${step.description}`, maxWidth - 5);
+        doc.text(descLines, 15, y);
+        y += descLines.length * lineHeight;
       }
       
       if (step.assignedToName) {
         doc.text(`Responsável: ${step.assignedToName}`, 15, y);
-        y += 5;
+        y += 6;
       }
 
       if (step.documentosMetadata && step.documentosMetadata.length > 0) {
         doc.text(`Documentos enviados (${step.documentosMetadata.length}):`, 15, y);
-        y += 5;
+        y += 6;
         step.documentosMetadata.forEach((meta: any) => {
           if (y > 280) {
             doc.addPage();
             y = 10;
           }
           doc.setFontSize(9);
-          doc.text(`- ${step.documentoTipo || 'Arquivo'}: ${meta.uploadedBy || 'Desconhecido'} (${meta.uploadedByRole || 'Usuário'})`, 20, y);
-          y += 4;
+          const metaText = `- ${step.documentoTipo || 'Arquivo'}: ${meta.uploadedBy || 'Desconhecido'} (${meta.uploadedByRole || 'Usuário'})`;
+          doc.text(metaText, 20, y);
+          y += 5;
         });
       }
       
       y += 8;
     });
+
+    const allAttachments: { stepTitle: string, documentoTipo: string, meta: any }[] = [];
+    steps.forEach(step => {
+        if (step.documentosMetadata) {
+            step.documentosMetadata.forEach((meta: any) => {
+                allAttachments.push({
+                    stepTitle: step.title,
+                    documentoTipo: step.documentoTipo || 'Arquivo',
+                    meta: meta
+                });
+            });
+        }
+    });
+
+    if(allAttachments.length > 0) {
+        doc.addPage();
+        doc.setFontSize(18);
+        doc.setTextColor(0, 51, 102);
+        doc.text('Anexos', 10, 15);
+        
+        let yAttach = 25;
+        
+        allAttachments.forEach(att => {
+             if (yAttach > 270) {
+                doc.addPage();
+                yAttach = 15;
+             }
+             doc.setFontSize(10);
+             doc.setTextColor(0, 0, 0);
+             const { meta, stepTitle, documentoTipo } = att;
+             const uploadedAt = meta.uploadedAt ? (meta.uploadedAt.toDate ? meta.uploadedAt.toDate().toLocaleString() : new Date(meta.uploadedAt.seconds * 1000).toLocaleString()) : 'Data desconhecida';
+             
+             doc.text(`${documentoTipo} (Etapa: ${stepTitle})`, 10, yAttach);
+             yAttach += 6;
+             doc.text(`Enviado por: ${meta.uploadedBy || 'Desconhecido'} (${meta.uploadedByRole || 'Usuário'})`, 15, yAttach);
+             yAttach += 5;
+             doc.text(`Data/Hora: ${uploadedAt}`, 15, yAttach);
+             yAttach += 5;
+             doc.text(`Link: ${meta.url.length > 80 ? meta.url.substring(0, 80) + '...' : meta.url}`, 15, yAttach);
+             yAttach += 10;
+        });
+    }
     
     doc.save(`relatorio_${contract.clientName.replace(/\s+/g, '_')}.pdf`);
   };
