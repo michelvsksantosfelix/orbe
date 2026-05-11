@@ -13,7 +13,8 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+        injectRegister: 'script-defer',
+        includeAssets: ['icon.svg'],
         manifest: {
           name: 'Orbe Gestão',
           short_name: 'Orbe Gestão',
@@ -23,14 +24,14 @@ export default defineConfig(({mode}) => {
           display: 'standalone',
           icons: [
             {
-              src: 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=192&h=192',
+              src: '/icon.svg',
               sizes: '192x192',
-              type: 'image/jpeg'
+              type: 'image/svg+xml'
             },
             {
-              src: 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=512&h=512',
+              src: '/icon.svg',
               sizes: '512x512',
-              type: 'image/jpeg',
+              type: 'image/svg+xml',
               purpose: 'any maskable'
             }
           ]
