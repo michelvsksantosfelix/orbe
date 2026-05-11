@@ -71,6 +71,10 @@ export default function AdminFinance() {
 
         // Process installments
         if (contract.installments && Array.isArray(contract.installments)) {
+          const totalContractValue = contract.installments.reduce((sum: number, i: any) => sum + parseFloat(i.amount || 0), 0);
+          const totalPaid = contract.installments.reduce((sum: number, i: any) => sum + (i.status === 'paid' ? parseFloat(i.amount || 0) : 0), 0);
+          const remainingToPay = totalContractValue - totalPaid;
+
           contract.installments.forEach((inst: any, index: number) => {
             const dueDate = inst.dueDate ? new Date(inst.dueDate) : createdAt;
             if (dueDate.getMonth() === targetMonth && dueDate.getFullYear() === targetYear) {
@@ -87,6 +91,8 @@ export default function AdminFinance() {
                 contractId: contract.id,
                 clientName: contract.clientName,
                 productName: contract.productName,
+                totalContractValue,
+                remainingToPay,
                 dueDateObj: dueDate,
                 contractInstallments: contract.installments,
                 installmentIndex: index
@@ -261,10 +267,20 @@ export default function AdminFinance() {
                   </td>
                   <td className="py-4">
                     <p className="text-sm text-gray-800">{item.productName}</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1 mb-1">
                       Parcela {item.number}{item.contractInstallments ? ` de ${item.contractInstallments.length}` : ''}
                       {item.note && ` - ${item.note}`}
                     </p>
+                    {item.totalContractValue !== undefined && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] text-gray-400 font-medium">Total: {formatCurrency(item.totalContractValue)}</span>
+                        {item.remainingToPay > 0 ? (
+                          <span className="text-[10px] text-orange-500 font-bold">Resta: {formatCurrency(item.remainingToPay)}</span>
+                        ) : (
+                          <span className="text-[10px] text-emerald-500 font-bold">Quitado</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="py-4 text-right text-sm font-medium text-blue-700">
                     {formatCurrency(item.amount)}
