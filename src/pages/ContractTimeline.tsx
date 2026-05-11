@@ -193,7 +193,7 @@ export default function ContractTimeline({ user }: { user: any }) {
         {docsToShow.map((meta: any, idx: number) => {
           console.log('Rendering document item:', meta);
           return (
-            <div key={meta.url} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
+            <div key={`${meta.url}-${idx}`} className={`p-4 rounded-2xl transition-colors border shadow-sm ${bgMap[accentColor]} w-full`}>
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${iconBgMap[accentColor]} shrink-0`}>
                   <FileText size={18} />

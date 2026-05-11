@@ -48,12 +48,17 @@ export default function FileUploadScanner({ contractId, stepId, user, expectedDo
         let fileToProcess = file;
 
         if (file.type.startsWith('image/')) {
-          const options = { 
-            maxSizeMB: 0.8, // Good resolution
-            maxWidthOrHeight: 1600,
-            useWebWorker: false,
-          };
-          fileToProcess = await imageCompression(file, options);
+          try {
+            const options = { 
+              maxSizeMB: 0.8, // Good resolution
+              maxWidthOrHeight: 1600,
+              useWebWorker: false,
+            };
+            fileToProcess = await imageCompression(file, options);
+          } catch (compressError) {
+            console.warn("Compression failed, using original file", compressError);
+            fileToProcess = file;
+          }
           
           const previewUrl = URL.createObjectURL(fileToProcess);
           objectUrlsRef.current.push(previewUrl);
