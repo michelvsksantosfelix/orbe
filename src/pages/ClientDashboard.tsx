@@ -4,12 +4,23 @@ import { collection, query, where, getDocs, onSnapshot, orderBy } from 'firebase
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ClientCreateContract from '../components/ClientCreateContract';
-import { LogOut, LayoutDashboard, ShoppingBag, MessageCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, ShoppingBag, MessageCircle, Filter } from 'lucide-react';
+
+const LINHAS_PISCINA = [
+  'Linha Aquários',
+  'Linha Corona',
+  'Linha Hidra',
+  'Linha Aquila',
+  'Linha Select',
+  'Linha Orion',
+  'Linha Fênix'
+];
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [filterLinha, setFilterLinha] = useState<string>('Todos');
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const user = auth.currentUser;
 
@@ -38,6 +49,32 @@ export default function ClientDashboard() {
   const handleLogout = () => {
     auth.signOut().then(() => navigate('/login'));
   };
+
+  const filteredProducts = products.filter(p => {
+    if (!p.title) return false;
+    if (filterLinha === 'Todos') return true;
+    if (p.linha && p.linha === filterLinha) return true;
+    if (!p.linha && typeof p.title === 'string' && p.title.toLowerCase().includes(filterLinha.toLowerCase())) return true;
+    return false;
+  }).sort((a, b) => {
+    const getDim = (val: any) => {
+      if (!val) return Infinity;
+      const parsed = parseFloat(String(val).replace(',', '.'));
+      return isNaN(parsed) ? Infinity : parsed;
+    };
+    
+    const compA = getDim(a.comprimento);
+    const compB = getDim(b.comprimento);
+    if (compA !== compB) return compA - compB;
+    
+    const largA = getDim(a.largura);
+    const largB = getDim(b.largura);
+    if (largA !== largB) return largA - largB;
+
+    const profA = getDim(a.profundidade);
+    const profB = getDim(b.profundidade);
+    return profA - profB;
+  });
 
   return (
     <div className="min-h-screen bg-transparent font-sans">
@@ -107,20 +144,42 @@ export default function ClientDashboard() {
                 <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.15em]">Explore soluções inteligentes</p>
               </div>
             </div>
-            <a 
-              href="https://wa.me/5521992006894?text=Olá Claudiany! Gostaria de saber mais sobre as piscinas da Orbe."
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] bg-white hover:bg-blue-600 hover:text-white text-gray-900 px-8 py-4 rounded-[24px] transition-all border border-gray-100 shadow-xl shadow-gray-100 w-full sm:w-auto"
-            >
-              <MessageCircle size={18} /> Falar com Vendas
-            </a>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto mt-4 sm:mt-0">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Filter size={16} className="text-gray-400" />
+                </div>
+                <select
+                  value={filterLinha}
+                  onChange={(e) => setFilterLinha(e.target.value)}
+                  className="w-full sm:w-auto pl-12 pr-10 py-4 bg-white border border-gray-100/50 rounded-[24px] text-[12px] font-bold text-gray-700 uppercase tracking-widest outline-none focus:ring-4 focus:ring-blue-500/20 shadow-sm appearance-none cursor-pointer"
+                >
+                  <option value="Todos">Todas as Linhas</option>
+                  {LINHAS_PISCINA.map(l => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+              <a 
+                href="https://wa.me/5521992006894?text=Olá Claudiany! Gostaria de saber mais sobre as piscinas da Orbe."
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] bg-white hover:bg-blue-600 hover:text-white text-gray-900 px-6 py-4 rounded-[24px] transition-all border border-gray-100 shadow-xl shadow-gray-100 w-full sm:w-auto"
+              >
+                <MessageCircle size={18} /> Falar com Vendas
+              </a>
+            </div>
           </div>
           
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {products.map(product => (
+            {filteredProducts.map(product => (
               <ProductCard key={product.id} product={product} onSelect={() => setSelectedProduct(product)} />
             ))}
+            {filteredProducts.length === 0 && products.length > 0 && (
+              <div className="col-span-full py-12 text-center">
+                <p className="text-gray-500 font-medium">Nenhum produto encontrado para esta seleção.</p>
+              </div>
+            )}
             {products.length === 0 && (
               <div className="col-span-full text-center py-24 glass-card rounded-[40px] border-dashed border-2 border-white/50 bg-white/10">
                 <ShoppingBag size={48} className="mx-auto text-gray-300 mb-6 opacity-20" />
