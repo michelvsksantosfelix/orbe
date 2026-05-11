@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, getDocs, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
-import { Loader2, TrendingUp, TrendingDown, DollarSign, Activity, CheckCircle2, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, DollarSign, Activity, CheckCircle2, ChevronLeft, ChevronRight, Check, X, Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
+import AdminFinanceEditModal from './AdminFinanceEditModal';
 
 export default function AdminFinance() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingContract, setEditingContract] = useState<any | null>(null);
   
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -259,7 +261,10 @@ export default function AdminFinance() {
                   </td>
                   <td className="py-4">
                     <p className="text-sm text-gray-800">{item.productName}</p>
-                    <p className="text-xs text-gray-500 mt-1">Parcela {item.number}{item.contractInstallments ? ` de ${item.contractInstallments.length}` : ''}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Parcela {item.number}{item.contractInstallments ? ` de ${item.contractInstallments.length}` : ''}
+                      {item.note && ` - ${item.note}`}
+                    </p>
                   </td>
                   <td className="py-4 text-right text-sm font-medium text-blue-700">
                     {formatCurrency(item.amount)}
@@ -277,24 +282,38 @@ export default function AdminFinance() {
                   </td>
                   <td className="py-4 text-right">
                     {!item.isLegacy && (
-                      <button 
-                        onClick={() => handleMarkAsPaid(item)}
-                        disabled={updatingId === item.id}
-                        className={`p-2 rounded-xl text-sm font-medium transition-all inline-flex items-center justify-center ${
-                          item.status === 'paid' 
-                            ? 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600' 
-                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'
-                        }`}
-                        title={item.status === 'paid' ? 'Desmarcar pagamento' : 'Dar quitação'}
-                      >
-                        {updatingId === item.id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : item.status === 'paid' ? (
-                          <X size={16} />
-                        ) : (
-                          <Check size={16} />
-                        )}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => setEditingContract({ 
+                            id: item.contractId, 
+                            clientName: item.clientName, 
+                            productName: item.productName, 
+                            installments: item.contractInstallments 
+                          })}
+                          className="p-2 rounded-xl text-sm font-medium transition-all bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-600 inline-flex items-center justify-center"
+                          title="Editar Plano de Pagamento"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleMarkAsPaid(item)}
+                          disabled={updatingId === item.id}
+                          className={`p-2 rounded-xl text-sm font-medium transition-all inline-flex items-center justify-center ${
+                            item.status === 'paid' 
+                              ? 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600' 
+                              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'
+                          }`}
+                          title={item.status === 'paid' ? 'Desmarcar pagamento' : 'Dar quitação'}
+                        >
+                          {updatingId === item.id ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : item.status === 'paid' ? (
+                            <X size={16} />
+                          ) : (
+                            <Check size={16} />
+                          )}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -309,6 +328,17 @@ export default function AdminFinance() {
           </table>
         </div>
       </div>
+      
+      {editingContract && (
+        <AdminFinanceEditModal 
+          contract={editingContract}
+          onCancel={() => setEditingContract(null)}
+          onSuccess={() => {
+            setEditingContract(null);
+            fetchFinancialData();
+          }}
+        />
+      )}
     </div>
   );
 }

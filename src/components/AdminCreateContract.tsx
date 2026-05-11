@@ -90,9 +90,37 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
           number: 1,
           amount: finalPrice,
           dueDate: today.toISOString(),
-          status: 'paid', // À vista assumes paid or pending? Let's make it paid if it's the exact day, or wait, admin might want to confirm. Let's make it 'paid' for 'avista' or 'pending'. Typically 'pending' is safer, but "dá quitação" implies they have to mark it. Let's make it 'pending'.
+          status: 'pending',
           paidAt: null
         });
+      } else if (paymentType === 'avista_sinal') {
+        const firstAmt = parseFloat(firstPaymentAmount.replace(',','.')) || 0;
+        const remainder = Math.max(0, finalPrice - firstAmt);
+        
+        // 1st Installment (Upfront Sinal)
+        installments.push({
+          id: `inst-1`,
+          number: 1,
+          amount: firstAmt,
+          dueDate: today.toISOString(),
+          status: 'pending',
+          paidAt: null
+        });
+
+        // 2nd Installment (Saldo na Entrega) 20 days later as a placeholder
+        const deliveryDate = new Date(today);
+        deliveryDate.setDate(deliveryDate.getDate() + 20); // 20 days roughly
+        
+        installments.push({
+          id: `inst-2`,
+          number: 2,
+          amount: remainder,
+          dueDate: deliveryDate.toISOString(),
+          status: 'pending',
+          paidAt: null,
+          note: 'Saldo na Entrega'
+        });
+
       } else {
         const firstAmt = parseFloat(firstPaymentAmount.replace(',','.')) || 0;
         const remainder = Math.max(0, finalPrice - firstAmt);
@@ -293,7 +321,8 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
                     onChange={e => setPaymentType(e.target.value)}
                     className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                   >
-                    <option value="avista">À Vista</option>
+                    <option value="avista">À Vista (Integral)</option>
+                    <option value="avista_sinal">À Vista (Sinal + Saldo na Entrega)</option>
                     <option value="parcelado">Parcelado (Compra Programada)</option>
                   </select>
                 </div>
@@ -314,22 +343,24 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
                 </div>
               </div>
 
-              {paymentType === 'parcelado' && (
+              {(paymentType === 'parcelado' || paymentType === 'avista_sinal') && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                  {paymentType === 'parcelado' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. de Parcelas</label>
+                      <input 
+                        type="number" 
+                        min="2" 
+                        max="120"
+                        value={installmentsCount} 
+                        onChange={e => setInstallmentsCount(parseInt(e.target.value))}
+                        className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        required
+                      />
+                    </div>
+                  )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. de Parcelas</label>
-                    <input 
-                      type="number" 
-                      min="2" 
-                      max="120"
-                      value={installmentsCount} 
-                      onChange={e => setInstallmentsCount(parseInt(e.target.value))}
-                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sinal / 1ª Parcela (R$)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Valor do Sinal (R$)</label>
                     <input 
                       type="number" 
                       step="0.01"
@@ -340,19 +371,21 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Melhor Dia de Vencimento</label>
-                    <input 
-                      type="number" 
-                      min="1"
-                      max="31"
-                      value={paymentDay} 
-                      onChange={e => setPaymentDay(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                      placeholder="Ex: 10"
-                      required
-                    />
-                  </div>
+                  {paymentType === 'parcelado' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Melhor Dia de Vencimento</label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        max="31"
+                        value={paymentDay} 
+                        onChange={e => setPaymentDay(e.target.value)}
+                        className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        placeholder="Ex: 10"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

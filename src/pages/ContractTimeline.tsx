@@ -365,7 +365,9 @@ export default function ContractTimeline({ user }: { user: any }) {
                <div>
                  <h2 className="text-xl font-bold text-gray-900 mb-1">Informações Financeiras</h2>
                  <p className="text-sm text-gray-500">
-                   {contract.paymentType === 'avista' ? 'Pagamento à Vista' : 'Compra Programada (Parcelado)'}
+                   {contract.paymentType === 'avista' ? 'Pagamento à Vista (Integral)' : 
+                    contract.paymentType === 'avista_sinal' ? 'Pagamento à Vista (Sinal + Saldo na Entrega)' : 
+                    'Compra Programada (Parcelado)'}
                    {contract.paymentMethod ? ` via ${contract.paymentMethod.toUpperCase()}` : ''}
                  </p>
                </div>
@@ -393,7 +395,10 @@ export default function ContractTimeline({ user }: { user: any }) {
                       const isPaid = inst.status === 'paid';
                       return (
                         <tr key={inst.id} className="border-b border-gray-50/50 hover:bg-gray-50/30 transition-colors">
-                          <td className="py-3 font-medium text-gray-700">{inst.number} de {contract.installments.length}</td>
+                          <td className="py-3 font-medium text-gray-700">
+                            {inst.number} de {contract.installments.length}
+                            {inst.note && <span className="block text-[10px] text-gray-500 font-normal">{inst.note}</span>}
+                          </td>
                           <td className="py-3 text-gray-600">{new Date(inst.dueDate).toLocaleDateString('pt-BR')}</td>
                           <td className="py-3 text-right font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(inst.amount))}</td>
                           <td className="py-3 text-center">
