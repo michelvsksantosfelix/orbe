@@ -371,11 +371,32 @@ export default function ContractTimeline({ user }: { user: any }) {
                    {contract.paymentMethod ? ` via ${contract.paymentMethod.toUpperCase()}` : ''}
                  </p>
                </div>
-               <div className="text-left md:text-right">
+               <div className="text-left md:text-right flex flex-col items-start md:items-end">
                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Valor Total</p>
-                 <p className="text-2xl font-bold text-gray-900">
+                 <p className="text-2xl font-bold text-gray-900 leading-none">
                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.price || 0)}
                  </p>
+                 
+                 {contract.installments && contract.installments.length > 0 && (
+                   <div className="mt-3 flex gap-4">
+                     <div className="text-right">
+                       <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Total Pago</p>
+                       <p className="text-sm font-bold text-emerald-600">
+                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                           contract.installments.reduce((sum: number, i: any) => sum + (i.status === 'paid' ? parseFloat(i.amount || 0) : 0), 0)
+                         )}
+                       </p>
+                     </div>
+                     <div className="text-right">
+                       <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Restante</p>
+                       <p className="text-sm font-bold text-orange-500">
+                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                           contract.installments.reduce((sum: number, i: any) => sum + (i.status !== 'paid' ? parseFloat(i.amount || 0) : 0), 0)
+                         )}
+                       </p>
+                     </div>
+                   </div>
+                 )}
                </div>
             </div>
 
