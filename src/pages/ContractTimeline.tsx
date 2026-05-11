@@ -391,7 +391,7 @@ export default function ContractTimeline({ user }: { user: any }) {
                        <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Restante</p>
                        <p className="text-sm font-bold text-orange-500">
                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                           contract.installments.reduce((sum: number, i: any) => sum + (i.status !== 'paid' ? parseFloat(i.amount || 0) : 0), 0)
+                           (contract.price || contract.installments.reduce((sum: number, i: any) => sum + parseFloat(i.amount || 0), 0)) - contract.installments.reduce((sum: number, i: any) => sum + (i.status === 'paid' ? parseFloat(i.amount || 0) : 0), 0)
                          )}
                        </p>
                      </div>

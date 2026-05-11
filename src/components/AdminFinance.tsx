@@ -71,7 +71,7 @@ export default function AdminFinance() {
 
         // Process installments
         if (contract.installments && Array.isArray(contract.installments)) {
-          const totalContractValue = contract.installments.reduce((sum: number, i: any) => sum + parseFloat(i.amount || 0), 0);
+          const totalContractValue = typeof contract.price === 'number' ? contract.price : contract.installments.reduce((sum: number, i: any) => sum + parseFloat(i.amount || 0), 0);
           const totalPaid = contract.installments.reduce((sum: number, i: any) => sum + (i.status === 'paid' ? parseFloat(i.amount || 0) : 0), 0);
           const remainingToPay = totalContractValue - totalPaid;
 

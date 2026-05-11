@@ -13,7 +13,6 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'script-defer',
         includeAssets: ['icon.svg'],
         manifest: {
           name: 'Orbe Gestão',
