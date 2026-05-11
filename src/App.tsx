@@ -13,6 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
 import CollabDashboard from './pages/CollabDashboard';
 import ContractTimeline from './pages/ContractTimeline';
+import InstallPrompt from './components/InstallPrompt';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -101,6 +102,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <InstallPrompt />
         <ToastContainer position="top-right" autoClose={3000} aria-label="Notifications" />
         <Routes>
           <Route path="/" element={<Navigate to={user ? (['admin'].includes(user.role) ? '/admin' : ['client'].includes(user.role) ? '/client' : '/colaborador') : '/login'} />} />
