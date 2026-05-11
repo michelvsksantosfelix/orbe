@@ -22,6 +22,13 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
   const [customPrice, setCustomPrice] = useState('');
   const [customCost, setCustomCost] = useState('');
 
+  // Payment State
+  const [paymentType, setPaymentType] = useState('avista'); // 'avista' | 'parcelado'
+  const [paymentMethod, setPaymentMethod] = useState(''); // 'dinheiro' | 'pix' | 'cartao' | 'boleto'
+  const [installmentsCount, setInstallmentsCount] = useState<number>(2);
+  const [firstPaymentAmount, setFirstPaymentAmount] = useState<string>('');
+  const [paymentDay, setPaymentDay] = useState<string>('10');
+
   useEffect(() => {
     Promise.all([
       getDocs(collection(db, 'users')),
@@ -51,6 +58,11 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
       const client = clients.find(c => c.id === selectedClientId);
       const product = products.find(p => p.id === selectedProductId);
 
+      if (!paymentMethod) {
+        toast.error('Selecione uma forma de pagamento.');
+        return;
+      }
+      
       let finalPrice = 0;
       let finalCost = 0;
 
@@ -68,6 +80,56 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
         finalCost = parseFloat(customCost.replace(',', '.')) || 0;
       }
 
+      // Generate Installments
+      const installments = [];
+      const today = new Date();
+      
+      if (paymentType === 'avista') {
+        installments.push({
+          id: `inst-1`,
+          number: 1,
+          amount: finalPrice,
+          dueDate: today.toISOString(),
+          status: 'paid', // À vista assumes paid or pending? Let's make it paid if it's the exact day, or wait, admin might want to confirm. Let's make it 'paid' for 'avista' or 'pending'. Typically 'pending' is safer, but "dá quitação" implies they have to mark it. Let's make it 'pending'.
+          paidAt: null
+        });
+      } else {
+        const firstAmt = parseFloat(firstPaymentAmount.replace(',','.')) || 0;
+        const remainder = Math.max(0, finalPrice - firstAmt);
+        const subInstallmentAmt = (installmentsCount > 1) ? (remainder / (installmentsCount - 1)) : remainder;
+        
+        // 1st Installment (Upfront)
+        installments.push({
+          id: `inst-1`,
+          number: 1,
+          amount: firstAmt,
+          dueDate: today.toISOString(),
+          status: 'pending',
+          paidAt: null
+        });
+
+        // the rest
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+        
+        for (let i = 2; i <= installmentsCount; i++) {
+          currentMonth++;
+          if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+          }
+          const d = new Date(currentYear, currentMonth, parseInt(paymentDay) || 10, 12, 0, 0);
+          installments.push({
+            id: `inst-${i}`,
+            number: i,
+            amount: subInstallmentAmt,
+            dueDate: d.toISOString(),
+            status: 'pending',
+            paidAt: null
+          });
+        }
+      }
+
       const contractRef = doc(collection(db, 'contracts'));
       
       await setDoc(contractRef, {
@@ -79,6 +141,9 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
         price: finalPrice,
         cost: finalCost,
         pricingTier,
+        paymentType,
+        paymentMethod,
+        installments,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -217,6 +282,80 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
                 </div>
               </div>
             )}
+
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <h4 className="font-semibold text-gray-800 mb-4">Condições de Pagamento</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pagamento</label>
+                  <select 
+                    value={paymentType} 
+                    onChange={e => setPaymentType(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  >
+                    <option value="avista">À Vista</option>
+                    <option value="parcelado">Parcelado (Compra Programada)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                  <select 
+                    value={paymentMethod} 
+                    onChange={e => setPaymentMethod(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="pix">PIX</option>
+                    <option value="cartao">Cartão de Crédito/Débito</option>
+                    <option value="boleto">Boleto (Compra Programada)</option>
+                  </select>
+                </div>
+              </div>
+
+              {paymentType === 'parcelado' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. de Parcelas</label>
+                    <input 
+                      type="number" 
+                      min="2" 
+                      max="120"
+                      value={installmentsCount} 
+                      onChange={e => setInstallmentsCount(parseInt(e.target.value))}
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sinal / 1ª Parcela (R$)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={firstPaymentAmount} 
+                      onChange={e => setFirstPaymentAmount(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                      placeholder="Ex: 5000.00"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Melhor Dia de Vencimento</label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      max="31"
+                      value={paymentDay} 
+                      onChange={e => setPaymentDay(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                      placeholder="Ex: 10"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

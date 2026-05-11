@@ -179,6 +179,24 @@ export default function AdminProducts() {
     // Fallback: search in title if linha is not explicitly set
     if (!p.linha && typeof p.title === 'string' && p.title.toLowerCase().includes(filterLinha.toLowerCase())) return true;
     return false;
+  }).sort((a, b) => {
+    const getDim = (val: any) => {
+      if (!val) return Infinity;
+      const parsed = parseFloat(String(val).replace(',', '.'));
+      return isNaN(parsed) ? Infinity : parsed;
+    };
+    
+    const compA = getDim(a.comprimento);
+    const compB = getDim(b.comprimento);
+    if (compA !== compB) return compA - compB;
+    
+    const largA = getDim(a.largura);
+    const largB = getDim(b.largura);
+    if (largA !== largB) return largA - largB;
+
+    const profA = getDim(a.profundidade);
+    const profB = getDim(b.profundidade);
+    return profA - profB;
   });
 
   return (

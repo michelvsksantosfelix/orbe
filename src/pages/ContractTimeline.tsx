@@ -358,6 +358,65 @@ export default function ContractTimeline({ user }: { user: any }) {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
         
+        {/* Finance / Payments Summary */}
+        {(contract.paymentType || contract.installments) && (
+          <section className="glass-panel p-6 md:p-8 rounded-[32px] mb-8 shadow-sm border border-white/40 relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+               <div>
+                 <h2 className="text-xl font-bold text-gray-900 mb-1">Informações Financeiras</h2>
+                 <p className="text-sm text-gray-500">
+                   {contract.paymentType === 'avista' ? 'Pagamento à Vista' : 'Compra Programada (Parcelado)'}
+                   {contract.paymentMethod ? ` via ${contract.paymentMethod.toUpperCase()}` : ''}
+                 </p>
+               </div>
+               <div className="text-left md:text-right">
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Valor Total</p>
+                 <p className="text-2xl font-bold text-gray-900">
+                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.price || 0)}
+                 </p>
+               </div>
+            </div>
+
+            {contract.installments && contract.installments.length > 0 && (
+              <div className="overflow-x-auto hide-scrollbar">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-gray-100/50">
+                      <th className="pb-2 font-medium text-gray-500">Parcela</th>
+                      <th className="pb-2 font-medium text-gray-500">Vencimento</th>
+                      <th className="pb-2 font-medium text-gray-500 text-right">Valor</th>
+                      <th className="pb-2 font-medium text-gray-500 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contract.installments.map((inst: any) => {
+                      const isPaid = inst.status === 'paid';
+                      return (
+                        <tr key={inst.id} className="border-b border-gray-50/50 hover:bg-gray-50/30 transition-colors">
+                          <td className="py-3 font-medium text-gray-700">{inst.number} de {contract.installments.length}</td>
+                          <td className="py-3 text-gray-600">{new Date(inst.dueDate).toLocaleDateString('pt-BR')}</td>
+                          <td className="py-3 text-right font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(inst.amount))}</td>
+                          <td className="py-3 text-center">
+                            {isPaid ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wider">
+                                <CheckCircle2 size={10} /> Pago
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wider">
+                                Pendente
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Timeline Component (Visual representation) */}
         <section className="glass-panel p-8 md:p-12 rounded-[32px] mb-12 shadow-sm border border-white/40 overflow-hidden">
           <div className="flex flex-col items-center mb-10 text-center">
