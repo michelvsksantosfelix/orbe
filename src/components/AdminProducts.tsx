@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, getDocs, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { Trash2, Plus, Image as ImageIcon, Loader2, Edit2, X } from 'lucide-react';
+import { Trash2, Plus, Image as ImageIcon, Loader2, Edit2, X, Filter } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -14,15 +14,27 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+const LINHAS_PISCINA = [
+  'Linha Aquários',
+  'Linha Corona',
+  'Linha Hidra',
+  'Linha Aquila',
+  'Linha Select',
+  'Linha Orion',
+  'Linha Fênix'
+];
+
 export default function AdminProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [filterLinha, setFilterLinha] = useState<string>('Todos');
   
   // Form State
   const [title, setTitle] = useState('');
+  const [linha, setLinha] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [cost, setCost] = useState('');
@@ -68,6 +80,7 @@ export default function AdminProducts() {
 
       const updateData: any = {
         title,
+        linha,
         description,
         price: parseFloat(price.toString().replace(',', '.')),
         cost: parseFloat(cost.toString().replace(',', '.')) || 0,
@@ -124,6 +137,7 @@ export default function AdminProducts() {
   const handleEditInit = (product: any) => {
     setEditingId(product.id);
     setTitle(product.title);
+    setLinha(product.linha || '');
     setDescription(product.description);
     setPrice(product.price.toString());
     setCost(product.cost?.toString() || '');
@@ -136,6 +150,7 @@ export default function AdminProducts() {
 
   const resetForm = () => {
     setTitle('');
+    setLinha('');
     setDescription('');
     setPrice('');
     setCost('');
@@ -146,24 +161,60 @@ export default function AdminProducts() {
     setImageFile(null);
   };
 
+  const filteredProducts = products.filter(p => {
+    if (filterLinha === 'Todos') return true;
+    if (p.linha && p.linha === filterLinha) return true;
+    // Fallback: search in title if linha is not explicitly set
+    if (!p.linha && typeof p.title === 'string' && p.title.toLowerCase().includes(filterLinha.toLowerCase())) return true;
+    return false;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl font-semibold text-gray-800">Catálogo de Produtos e Serviços</h2>
-        {!isAdding && (
-          <button onClick={() => setIsAdding(true)} className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto min-h-[44px]">
-            <Plus size={16} /> Novo Produto
-          </button>
-        )}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter size={16} className="text-gray-400" />
+            </div>
+            <select
+              value={filterLinha}
+              onChange={(e) => setFilterLinha(e.target.value)}
+              className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm appearance-none cursor-pointer min-w-[200px]"
+            >
+              <option value="Todos">Todas as Linhas</option>
+              {LINHAS_PISCINA.map(l => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+          </div>
+          {!isAdding && (
+            <button onClick={() => setIsAdding(true)} className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto min-h-[44px] shrink-0">
+              <Plus size={16} /> Novo Produto
+            </button>
+          )}
+        </div>
       </div>
 
       {isAdding && (
         <form onSubmit={handleAddProduct} className="glass-card p-6 rounded-3xl space-y-4 shadow-sm relative">
           <h3 className="font-bold text-lg text-gray-800 mb-4">Adicionar Novo Produto</h3>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título / Nome</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Piscina Orbe Infinity" required />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Título / Nome</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Piscina Orbe Infinity" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Linha (Opcional)</label>
+              <select value={linha} onChange={e => setLinha(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                <option value="">Selecione uma linha...</option>
+                {LINHAS_PISCINA.map(l => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -228,12 +279,12 @@ export default function AdminProducts() {
         <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map(product => (
-            <div key={product.id} className="glass-card rounded-3xl overflow-hidden hover:shadow-lg transition-all relative">
+          {filteredProducts.map(product => (
+            <div key={product.id} className="glass-card rounded-3xl overflow-hidden hover:shadow-lg transition-all relative flex flex-col">
               <img 
                 src={product.image || 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=800'} 
                 alt={product.title} 
-                className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity shrink-0"
                 onClick={() => setSelectedImage(product.image || 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=800')}
               />
               <div className="absolute top-3 right-3 flex gap-2">
@@ -244,27 +295,34 @@ export default function AdminProducts() {
                   <Trash2 size={18} />
                 </button>
               </div>
-              <div className="p-5">
-                <h3 className="font-bold text-gray-900 mb-1">{product.title}</h3>
-                <div className="flex gap-4 mb-2 border-b border-gray-100 pb-2">
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="mb-2">
+                  {product.linha && (
+                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md uppercase tracking-wider mb-2">
+                      {product.linha}
+                    </span>
+                  )}
+                  <h3 className="font-bold text-gray-900 leading-tight">{product.title}</h3>
+                </div>
+                <div className="flex gap-4 mb-3 border-b border-gray-100 pb-3 mt-auto">
                   <p className="text-sm font-medium text-blue-700">
-                    <span className="block text-xs uppercase tracking-wider text-gray-400">Venda</span>
+                    <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Venda</span>
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
                   </p>
                   {product.cost ? (
                     <p className="text-sm font-medium text-gray-600">
-                      <span className="block text-xs uppercase tracking-wider text-gray-400">Custo</span>
+                      <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Custo</span>
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.cost)}
                     </p>
                   ) : null}
                 </div>
-                <p className="text-xs text-gray-600 line-clamp-2 mt-2">{product.description}</p>
+                <p className="text-xs text-gray-600 line-clamp-2">{product.description}</p>
               </div>
             </div>
           ))}
-          {products.length === 0 && !isAdding && (
+          {filteredProducts.length === 0 && !isAdding && (
             <div className="col-span-full text-center py-12 glass-card rounded-3xl border-dashed border-2 border-white/50">
-              <p className="text-gray-500">Nenhum produto cadastrado no catálogo.</p>
+              <p className="text-gray-500">Nenhum produto {filterLinha !== 'Todos' ? `da ${filterLinha}` : 'cadastrado'} no catálogo.</p>
             </div>
           )}
         </div>
@@ -294,3 +352,4 @@ export default function AdminProducts() {
     </div>
   );
 }
+

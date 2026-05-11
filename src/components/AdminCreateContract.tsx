@@ -122,6 +122,13 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
+  const productsByLine = products.reduce((acc, p) => {
+    const line = p.linha || 'Outros';
+    if (!acc[line]) acc[line] = [];
+    acc[line].push(p);
+    return acc;
+  }, {} as Record<string, any[]>);
+
   return (
     <div className="glass-card p-6 rounded-3xl mb-8 border border-white/50">
       <h3 className="text-xl font-bold text-gray-900 mb-6">Novo Contrato</h3>
@@ -154,8 +161,12 @@ export default function AdminCreateContract({ onCancel, onSuccess }: Props) {
               required
             >
               <option value="">Selecione um produto...</option>
-              {products.map(p => (
-                <option key={p.id} value={p.id}>{p.title}</option>
+              {Object.keys(productsByLine).sort().map(line => (
+                <optgroup key={line} label={line}>
+                  {productsByLine[line].map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
