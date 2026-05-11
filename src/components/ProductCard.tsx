@@ -12,7 +12,19 @@ export default function ProductCard({ product, onSelect }: Props) {
       <img src={product.image || 'https://images.unsplash.com/photo-1576013551627-11dc5fdb6ad5?auto=format&fit=crop&q=80&w=800'} alt={product.title} className="w-full h-48 object-cover" />
       <div className="p-5">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-bold text-gray-900">{product.title}</h3>
+          <div>
+            {product.linha && (
+              <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md uppercase tracking-wider mb-1">
+                {product.linha}
+              </span>
+            )}
+            <h3 className="text-lg font-bold text-gray-900">{product.title}</h3>
+            {(product.comprimento || product.largura || product.profundidade) && (
+              <p className="text-[11px] text-gray-500 mt-1 font-medium bg-gray-50 inline-block px-2 py-0.5 rounded border border-gray-100">
+                C: {product.comprimento || '-'}m | L: {product.largura || '-'}m | P: {product.profundidade || '-'}m
+              </p>
+            )}
+          </div>
           {(product.price) && (
             <span className="glass-panel border-white/50 text-blue-700 text-xs font-bold px-2 py-1 rounded">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}

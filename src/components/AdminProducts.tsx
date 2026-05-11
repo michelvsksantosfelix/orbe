@@ -42,6 +42,9 @@ export default function AdminProducts() {
   const [costShipping, setCostShipping] = useState('');
   const [priceInstalled, setPriceInstalled] = useState('');
   const [costInstalled, setCostInstalled] = useState('');
+  const [comprimento, setComprimento] = useState('');
+  const [largura, setLargura] = useState('');
+  const [profundidade, setProfundidade] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -88,6 +91,9 @@ export default function AdminProducts() {
         costShipping: parseFloat(costShipping.toString().replace(',', '.')) || 0,
         priceInstalled: parseFloat(priceInstalled.toString().replace(',', '.')) || 0,
         costInstalled: parseFloat(costInstalled.toString().replace(',', '.')) || 0,
+        comprimento,
+        largura,
+        profundidade,
       };
       if (imageUrl) {
         updateData.image = imageUrl;
@@ -145,6 +151,9 @@ export default function AdminProducts() {
     setCostShipping(product.costShipping?.toString() || '');
     setPriceInstalled(product.priceInstalled?.toString() || '');
     setCostInstalled(product.costInstalled?.toString() || '');
+    setComprimento(product.comprimento || '');
+    setLargura(product.largura || '');
+    setProfundidade(product.profundidade || '');
     setIsAdding(true); // Re-using the form for editing
   };
 
@@ -158,6 +167,9 @@ export default function AdminProducts() {
     setCostShipping('');
     setPriceInstalled('');
     setCostInstalled('');
+    setComprimento('');
+    setLargura('');
+    setProfundidade('');
     setImageFile(null);
   };
 
@@ -220,6 +232,21 @@ export default function AdminProducts() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Detalhes do produto ou serviço..." rows={3} required />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Comprimento (m)</label>
+              <input type="text" value={comprimento} onChange={e => setComprimento(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 6,00" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Largura (m)</label>
+              <input type="text" value={largura} onChange={e => setLargura(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 3,00" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Profundidade (m)</label>
+              <input type="text" value={profundidade} onChange={e => setProfundidade(e.target.value)} className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 1,40" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -303,6 +330,11 @@ export default function AdminProducts() {
                     </span>
                   )}
                   <h3 className="font-bold text-gray-900 leading-tight">{product.title}</h3>
+                  {(product.comprimento || product.largura || product.profundidade) && (
+                    <p className="text-[11px] text-gray-500 mt-1 font-medium bg-gray-50 inline-block px-2 py-0.5 rounded border border-gray-100">
+                      C: {product.comprimento || '-'}m | L: {product.largura || '-'}m | P: {product.profundidade || '-'}m
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-4 mb-3 border-b border-gray-100 pb-3 mt-auto">
                   <p className="text-sm font-medium text-blue-700">
