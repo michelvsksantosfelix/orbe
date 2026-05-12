@@ -6,35 +6,54 @@ export default function InstallPrompt() {
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
+    // Verificar se já está instalado
     if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
       setIsStandalone(true);
     }
 
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
+      // Salvar o evento para ser disparado pelo botão
       setDeferredPrompt(e);
+      (window as any).deferredPWAInstallPrompt = e;
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Checar se o PWA configurou globalmente
+    const checkInterval = setInterval(() => {
+      if ((window as any).deferredPWAInstallPrompt && !deferredPrompt) {
+        setDeferredPrompt((window as any).deferredPWAInstallPrompt);
+      }
+    }, 1000);
+
     return () => {
+      clearInterval(checkInterval);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      alert("A instalação automática ainda não está pronta ou seu navegador não a suporta. Aguarde alguns segundos ou faça a instalação pelo menu do navegador (Geralmente em 'Instalar aplicativo...' ou 'Adicionar à Tela de Início').");
+    const promptEvent = deferredPrompt || (window as any).deferredPWAInstallPrompt;
+    
+    if (!promptEvent) {
+      // Se não tem evento, provável que falte engajamento ou não está configurado 100%, 
+      // ou já está instalado. Fallback natural:
+      alert('Para instalar, o navegador precisa disponibilizar a opção. Se o botão não funcionar, você pode instalar através do menu (...) do Chrome/Edge clicando em "Instalar aplicativo".');
       return;
     }
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsStandalone(true);
+    try {
+      promptEvent.prompt();
+      const { outcome } = await promptEvent.userChoice;
+      if (outcome === 'accepted') {
+        setIsStandalone(true);
+      }
+      setDeferredPrompt(null);
+      (window as any).deferredPWAInstallPrompt = null;
+    } catch (err) {
+      console.error('Erro ao abrir prompt de instalação:', err);
     }
-    setDeferredPrompt(null);
   };
 
   if (isStandalone) return null;
@@ -42,11 +61,10 @@ export default function InstallPrompt() {
   return (
     <button
       onClick={handleInstallClick}
-      className={`fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 text-white font-black uppercase tracking-wider text-xs py-4 px-6 rounded-[24px] shadow-2xl transition-all ${deferredPrompt ? 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95' : 'bg-gray-400 cursor-not-allowed'}`}
-      title={deferredPrompt ? "Instalar aplicativo" : "Aguardando disponibilidade do navegador..."}
+      className={`fixed bottom-6 right-6 z-[9999] flex items-center justify-center gap-2 text-white font-black uppercase tracking-wider text-xs py-4 px-6 rounded-[24px] shadow-2xl transition-all bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95 border-2 border-white/20`}
     >
       <Download size={18} />
-      <span>{deferredPrompt ? 'Instalar App' : 'Carregando...'}</span>
+      <span>Instalar App</span>
     </button>
   );
 }

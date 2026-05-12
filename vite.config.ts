@@ -16,15 +16,22 @@ export default defineConfig(({mode}) => {
         includeAssets: ['icon.svg'],
         manifest: {
           name: 'Orbe Gestão',
-          short_name: 'Orbe Gestão',
+          short_name: 'Orbe',
           description: 'Infraestrutura inteligente para controle total de obras e instalações premium.',
-          theme_color: '#ffffff',
-          start_url: '/',
+          theme_color: '#2563eb',
+          background_color: '#ffffff',
           display: 'standalone',
+          scope: '/',
+          start_url: '/',
           icons: [
             {
               src: '/icon.svg',
               sizes: '192x192',
+              type: 'image/svg+xml'
+            },
+            {
+              src: '/icon.svg',
+              sizes: '512x512',
               type: 'image/svg+xml'
             },
             {
@@ -36,7 +43,8 @@ export default defineConfig(({mode}) => {
           ]
         },
         devOptions: {
-          enabled: true
+          enabled: true,
+          type: 'module'
         }
       })
     ],
